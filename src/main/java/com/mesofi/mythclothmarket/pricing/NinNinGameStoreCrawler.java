@@ -49,6 +49,7 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
     public String getInitialSearchUrl() {
         return "/en/myth-cloth-saint-seiya";
     }
+
     @Override
     public int getMaxPages() {
         return 30;

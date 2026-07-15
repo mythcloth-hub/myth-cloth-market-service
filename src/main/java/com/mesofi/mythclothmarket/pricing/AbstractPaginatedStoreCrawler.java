@@ -54,9 +54,13 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
     }
 
     protected abstract MarketPriceStore parseListing(Element element);
+
     protected abstract String storeBaseUrl();
+
     protected abstract String getInitialSearchUrl();
+
     protected abstract int getMaxPages();
+
     protected abstract StoreSelectors selectors();
 
     private String getNextPageUrl(Document doc) {
