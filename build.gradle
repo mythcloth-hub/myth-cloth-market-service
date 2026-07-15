@@ -70,6 +70,7 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testAnnotationProcessor 'org.projectlombok:lombok'
     implementation 'com.microsoft.playwright:playwright:1.54.0'
+    implementation 'org.jsoup:jsoup:1.18.1'
 }
 
 jacoco {
