@@ -1,4 +1,4 @@
-package com.mesofi.mythclothmarket.pricing.fetcher;
+package com.mesofi.mythclothmarket.crawler.fetcher;
 
 import java.io.IOException;
 

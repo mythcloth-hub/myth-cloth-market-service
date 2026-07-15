@@ -1,4 +1,4 @@
-package com.mesofi.mythclothmarket.pricing.model;
+package com.mesofi.mythclothmarket.crawler.model;
 
 import java.math.BigDecimal;
 import java.time.Instant;

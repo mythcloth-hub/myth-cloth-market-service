@@ -1,4 +1,4 @@
-package com.mesofi.mythclothmarket.pricing;
+package com.mesofi.mythclothmarket.crawler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,9 +10,10 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.mesofi.mythclothmarket.MarketPriceStore;
-import com.mesofi.mythclothmarket.pricing.fetcher.PageFetcher;
-import com.mesofi.mythclothmarket.pricing.model.StoreListing;
+import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
+import com.mesofi.mythclothmarket.crawler.model.MarketPriceStore;
+import com.mesofi.mythclothmarket.crawler.model.StoreListing;
+import com.mesofi.mythclothmarket.crawler.model.StoreSelectors;
 
 public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
 

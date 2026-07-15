@@ -1,13 +1,14 @@
-package com.mesofi.mythclothmarket.pricing;
+package com.mesofi.mythclothmarket.crawler;
 
 import java.util.Optional;
 
 import org.jsoup.nodes.Element;
 import org.springframework.stereotype.Component;
 
-import com.mesofi.mythclothmarket.MarketPriceStore;
-import com.mesofi.mythclothmarket.pricing.fetcher.PageFetcher;
-import com.mesofi.mythclothmarket.pricing.model.StoreName;
+import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
+import com.mesofi.mythclothmarket.crawler.model.MarketPriceStore;
+import com.mesofi.mythclothmarket.crawler.model.StoreName;
+import com.mesofi.mythclothmarket.crawler.model.StoreSelectors;
 
 @Component
 public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {

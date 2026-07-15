@@ -1,4 +1,4 @@
-package com.mesofi.mythclothmarket;
+package com.mesofi.mythclothmarket.example;
 
 import java.util.LinkedHashSet;
 import java.util.List;
