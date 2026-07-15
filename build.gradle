@@ -69,6 +69,7 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testAnnotationProcessor 'org.projectlombok:lombok'
+    implementation 'com.microsoft.playwright:playwright:1.54.0'
 }
 
 jacoco {
