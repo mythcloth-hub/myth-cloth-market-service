@@ -7,7 +7,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class MarketPriceStore {
+public class RawStoreListing {
     private String figurineRawName;
     private String price;
     private String discount;

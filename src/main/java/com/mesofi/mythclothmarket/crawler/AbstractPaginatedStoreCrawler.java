@@ -11,9 +11,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
-import com.mesofi.mythclothmarket.crawler.model.MarketPriceStore;
+import com.mesofi.mythclothmarket.crawler.model.RawStoreListing;
 import com.mesofi.mythclothmarket.crawler.model.StoreListing;
-import com.mesofi.mythclothmarket.crawler.model.StoreSelectors;
+import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
 
 public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
 
@@ -27,7 +27,7 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
 
     @Override
     public List<StoreListing> crawlListings() {
-        List<MarketPriceStore> marketPriceStoreList = new ArrayList<>();
+        List<RawStoreListing> marketPriceStoreList = new ArrayList<>();
         String url = storeBaseUrl() + getInitialSearchUrl();
 
         int pageCount = 0;
@@ -54,7 +54,7 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
         return List.of();
     }
 
-    protected abstract MarketPriceStore parseListing(Element element);
+    protected abstract RawStoreListing parseListing(Element element);
 
     protected abstract String storeBaseUrl();
 
@@ -62,7 +62,7 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
 
     protected abstract int getMaxPages();
 
-    protected abstract StoreSelectors selectors();
+    protected abstract StorePageSelectors selectors();
 
     private String getNextPageUrl(Document doc) {
         Element nextPageLink = doc.selectFirst(selectors().nextPage());

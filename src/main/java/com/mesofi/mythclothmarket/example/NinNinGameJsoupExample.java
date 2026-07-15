@@ -9,7 +9,7 @@ import com.mesofi.mythclothmarket.crawler.model.StoreListing;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
 
 public class NinNinGameJsoupExample {
-    static void main(String[] args) {
+    public static void main(String[] args) {
 
         AbstractPaginatedStoreCrawler paginatedStoreCrawler = new NinNinGameStoreCrawler(new JsoupHtmlFetcher());
 

@@ -4,9 +4,9 @@ import org.jsoup.nodes.Element;
 import org.springframework.stereotype.Component;
 
 import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
-import com.mesofi.mythclothmarket.crawler.model.MarketPriceStore;
+import com.mesofi.mythclothmarket.crawler.model.RawStoreListing;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
-import com.mesofi.mythclothmarket.crawler.model.StoreSelectors;
+import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
 
 @Component
 public class BigBadToysStoreCrawler extends AbstractPaginatedStoreCrawler {
@@ -21,7 +21,7 @@ public class BigBadToysStoreCrawler extends AbstractPaginatedStoreCrawler {
     }
 
     @Override
-    protected MarketPriceStore parseListing(Element element) {
+    protected RawStoreListing parseListing(Element element) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -45,7 +45,7 @@ public class BigBadToysStoreCrawler extends AbstractPaginatedStoreCrawler {
     }
 
     @Override
-    protected StoreSelectors selectors() {
+    protected StorePageSelectors selectors() {
         // TODO Auto-generated method stub
         return null;
     }
