@@ -3,7 +3,7 @@ myth-cloth-market-service:
     jobs:
       - key: "NIN_NIN_GAME"
         name: "Nin Nin Game Crawler"
-        cron: "0 0 0 * * ?"   # Every day at midnight
+        cron: "0 * * * * ?"   # Every minute
         enabled: true
 
       - key: "BBTS"

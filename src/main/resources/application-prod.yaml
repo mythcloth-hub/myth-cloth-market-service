@@ -1,0 +1,12 @@
+myth-cloth-market-service:
+  crawler:
+    jobs:
+      - key: "NIN_NIN_GAME"
+        name: "Nin Nin Game Crawler"
+        cron: ${NIN_NIN_GAME_CRON}
+        enabled: true
+
+      - key: "BBTS"
+        name: "Big Bad Toy Store Crawler"
+        cron: ${BBTS_CRON}
+        enabled: true

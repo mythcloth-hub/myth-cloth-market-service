@@ -17,8 +17,6 @@ public class StoreCrawlerJob implements Job {
 
     @Override
     public void execute(JobExecutionContext context) {
-        log.info("Quartz Cron Job triggered successfully!");
-
         // Extract both instances dynamically from the JobDataMap
         MarketService marketService = (MarketService) context.getJobDetail().getJobDataMap().get("marketService");
         StoreCrawler storeCrawler = (StoreCrawler) context.getJobDetail().getJobDataMap().get("storeCrawler");
