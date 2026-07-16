@@ -2,6 +2,7 @@ package com.mesofi.mythclothmarket.crawler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -41,13 +42,21 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
     /**
      * Crawls all pages up to {@link #getMaxPages()} and maps each raw listing to
      * the normalized domain model.
+     * <p>
+     * Store metadata (base URL, selectors, store name and status resolver) is
+     * resolved once per crawl to avoid repeated allocations in the item loop.
      *
      * @return normalized listings collected from the target store.
      */
     @Override
     public List<StoreListing> crawlListings() {
         List<StoreListing> marketPriceStoreList = new ArrayList<>();
-        String url = storeBaseUrl() + getInitialSearchUrl();
+        final String baseUrl = storeBaseUrl();
+        final StorePageSelectors pageSelectors = selectors();
+        final var storeName = store();
+        final Function<String, ListingStatus> listingStatusResolver = this::calculateListingStatus;
+
+        String url = baseUrl + getInitialSearchUrl();
 
         int pageCount = 0;
         while (url != null && pageCount < getMaxPages()) {
@@ -59,17 +68,17 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
             }
 
             Document doc = Jsoup.parse(html);
-            Elements figurineItems = doc.select(selectors().item());
+            Elements figurineItems = doc.select(pageSelectors.item());
             log.info("Found {} figurine items on page {}", figurineItems.size(), pageCount);
 
             figurineItems.forEach(element -> marketPriceStoreList
-                    .add(crawlerMapper.toStoreListing(parseListing(element), store(), this::calculateListingStatus)));
+                    .add(crawlerMapper.toStoreListing(parseListing(element), storeName, listingStatusResolver)));
 
-            url = getNextPageUrl(doc);
+            url = getNextPageUrl(doc, pageSelectors, baseUrl);
         }
 
-        log.info("Finished retrieving store listing info for {}. Total pages: {}, Total items: {}", store(), pageCount,
-                marketPriceStoreList.size());
+        log.info("Finished retrieving store listing info for {}. Total pages: {}, Total items: {}", storeName,
+                pageCount, marketPriceStoreList.size());
 
         return marketPriceStoreList;
     }
@@ -117,17 +126,21 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
      *
      * @param doc
      *            parsed document for the current page.
+     * @param pageSelectors
+     *            selectors configured for the current crawler implementation.
+     * @param baseUrl
+     *            absolute store base URL used to resolve relative next-page links.
      * @return next page URL, or {@code null} if no next page is available.
      */
-    private String getNextPageUrl(Document doc) {
-        Element nextPageLink = doc.selectFirst(selectors().nextPage());
+    private String getNextPageUrl(Document doc, StorePageSelectors pageSelectors, String baseUrl) {
+        Element nextPageLink = doc.selectFirst(pageSelectors.nextPage());
         if (nextPageLink != null) {
             String href = nextPageLink.attr("href");
             if (!href.isEmpty()) {
                 if (href.startsWith("http")) {
                     return href;
                 } else if (href.startsWith("/")) {
-                    return storeBaseUrl() + href;
+                    return baseUrl + href;
                 }
             }
         }
