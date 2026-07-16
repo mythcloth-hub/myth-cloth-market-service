@@ -1,10 +1,12 @@
-package com.mesofi.mythclothmarket.crawler;
+package com.mesofi.mythclothmarket.crawler.impl;
 
 import java.util.Optional;
 
 import org.jsoup.nodes.Element;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
+import com.mesofi.mythclothmarket.crawler.AbstractPaginatedStoreCrawler;
 import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
 import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper;
 import com.mesofi.mythclothmarket.crawler.mapper.RawStoreListing;
@@ -24,7 +26,7 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
      * @param mapper
      *            mapper that converts scraped values to normalized listings.
      */
-    public NinNinGameStoreCrawler(PageFetcher pageFetcher, CrawlerMapper mapper) {
+    public NinNinGameStoreCrawler(@Qualifier("jsoupHtmlFetcher") PageFetcher pageFetcher, CrawlerMapper mapper) {
         super(pageFetcher, mapper);
     }
 

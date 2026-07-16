@@ -2,15 +2,21 @@ package com.mesofi.mythclothmarket.crawler.fetcher;
 
 import java.util.Map;
 
+import org.springframework.stereotype.Component;
+
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * {@link PageFetcher} backed by a headless Playwright browser.
  */
+@Slf4j
+@Component
 public class PlaywrightHtmlFetcher implements PageFetcher {
     /**
      * Fetches fully rendered HTML by navigating the page in a headless browser.

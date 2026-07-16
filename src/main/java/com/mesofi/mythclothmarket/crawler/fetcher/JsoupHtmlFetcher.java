@@ -3,6 +3,7 @@ package com.mesofi.mythclothmarket.crawler.fetcher;
 import java.io.IOException;
 
 import org.jsoup.Jsoup;
+import org.springframework.stereotype.Component;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -10,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
  * {@link PageFetcher} backed by Jsoup HTTP requests.
  */
 @Slf4j
+@Component
 public class JsoupHtmlFetcher implements PageFetcher {
 
     /**

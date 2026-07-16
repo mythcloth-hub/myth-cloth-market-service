@@ -1,0 +1,12 @@
+myth-cloth-market-service:
+  crawler:
+    jobs:
+      - key: "NIN_NIN_GAME"
+        name: "Nin Nin Game Crawler"
+        cron: "0 0 0 * * ?"   # Every day at midnight
+        enabled: true
+
+      - key: "BBTS"
+        name: "Big Bad Toy Store Crawler"
+        cron: "0 0 12 * * ?"   # Every day at noon
+        enabled: true

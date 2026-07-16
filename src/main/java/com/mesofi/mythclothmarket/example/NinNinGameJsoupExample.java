@@ -3,8 +3,8 @@ package com.mesofi.mythclothmarket.example;
 import java.util.List;
 
 import com.mesofi.mythclothmarket.crawler.AbstractPaginatedStoreCrawler;
-import com.mesofi.mythclothmarket.crawler.NinNinGameStoreCrawler;
 import com.mesofi.mythclothmarket.crawler.fetcher.JsoupHtmlFetcher;
+import com.mesofi.mythclothmarket.crawler.impl.NinNinGameStoreCrawler;
 import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapperImpl;
 import com.mesofi.mythclothmarket.crawler.model.StoreListing;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
