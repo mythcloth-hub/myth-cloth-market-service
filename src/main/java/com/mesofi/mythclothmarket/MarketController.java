@@ -1,14 +1,15 @@
 package com.mesofi.mythclothmarket;
 
-import com.mesofi.mythclothmarket.crawler.StoreCrawler;
-import com.mesofi.mythclothmarket.crawler.model.StoreListing;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import java.util.List;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.mesofi.mythclothmarket.crawler.StoreCrawler;
+import com.mesofi.mythclothmarket.crawler.model.StoreListing;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController

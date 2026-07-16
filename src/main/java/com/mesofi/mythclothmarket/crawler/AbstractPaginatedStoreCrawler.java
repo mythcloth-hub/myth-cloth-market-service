@@ -46,7 +46,7 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
      */
     @Override
     public List<StoreListing> crawlListings() {
-        List<RawStoreListing> marketPriceStoreList = new ArrayList<>();
+        List<StoreListing> marketPriceStoreList = new ArrayList<>();
         String url = storeBaseUrl() + getInitialSearchUrl();
 
         int pageCount = 0;
@@ -62,7 +62,8 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
             Elements figurineItems = doc.select(selectors().item());
             log.info("Found {} figurine items on page {}", figurineItems.size(), pageCount);
 
-            figurineItems.forEach(figurine -> marketPriceStoreList.add(parseListing(figurine)));
+            figurineItems.forEach(element -> marketPriceStoreList
+                    .add(crawlerMapper.toStoreListing(parseListing(element), store(), this::calculateListingStatus)));
 
             url = getNextPageUrl(doc);
         }
@@ -70,8 +71,7 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
         log.info("Finished retrieving store listing info for {}. Total pages: {}, Total items: {}", store(), pageCount,
                 marketPriceStoreList.size());
 
-        return marketPriceStoreList.stream()
-                .map(raw -> crawlerMapper.toStoreListing(raw, store(), this::calculateListingStatus)).toList();
+        return marketPriceStoreList;
     }
 
     /**
