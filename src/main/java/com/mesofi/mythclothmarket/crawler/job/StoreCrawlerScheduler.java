@@ -1,4 +1,4 @@
-package com.mesofi.mythclothmarket.job;
+package com.mesofi.mythclothmarket.crawler.job;
 
 import java.util.List;
 
@@ -13,22 +13,51 @@ import org.quartz.TriggerBuilder;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.context.annotation.Configuration;
 
-import com.mesofi.mythclothmarket.MarketService;
 import com.mesofi.mythclothmarket.crawler.StoreCrawler;
+import com.mesofi.mythclothmarket.pricing.MarketPricingService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Initializes and registers Quartz jobs for all configured store crawlers
+ * during application startup.
+ * <p>
+ * After all Spring singleton beans have been created, this initializer
+ * discovers every available {@link StoreCrawler}, resolves its scheduling
+ * configuration from {@link CrawlerProperties}, and programmatically registers
+ * a corresponding Quartz {@link JobDetail} and {@link Trigger}.
+ * <p>
+ * Each crawler is scheduled independently using its configured cron expression,
+ * allowing different stores to be synchronized at different intervals or
+ * disabled entirely through external configuration.
+ */
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
-public class DynamicQuartzInitializer implements SmartInitializingSingleton {
+public class StoreCrawlerScheduler implements SmartInitializingSingleton {
 
     private final List<StoreCrawler> crawlers;
     private final CrawlerProperties crawlerProperties;
-    private final MarketService marketService;
+    private final MarketPricingService marketService;
     private final Scheduler scheduler;
 
+    /**
+     * Registers Quartz jobs for all enabled store crawlers once the Spring
+     * application context has finished creating its singleton beans.
+     * <p>
+     * For each configured crawler, this method:
+     * <ol>
+     * <li>Retrieves the corresponding scheduling configuration.</li>
+     * <li>Skips disabled crawler jobs.</li>
+     * <li>Creates a {@link JobDetail} containing the required job data.</li>
+     * <li>Creates a cron-based {@link Trigger}.</li>
+     * <li>Schedules the job with the Quartz {@link Scheduler}.</li>
+     * </ol>
+     * <p>
+     * Any scheduling failures are logged without preventing the initialization of
+     * other crawler jobs.
+     */
     @Override
     public void afterSingletonsInstantiated() {
         log.info("Initializing dynamic Quartz jobs for store crawlers...");

@@ -28,16 +28,6 @@ public interface CrawlerMapper {
     Pattern DISCOUNT_PATTERN = Pattern.compile("\\d+");
     Pattern CURRENCY_PREFIX_PATTERN = Pattern.compile("^[A-Za-z]+");
 
-    @Mapping(target = "store", expression = "java(storeName)")
-    @Mapping(target = "productName", source = "figurineRawName")
-    @Mapping(target = "lineUp", ignore = true)
-    @Mapping(target = "price", source = "price", qualifiedByName = "parsePrice")
-    @Mapping(target = "discount", source = "discount", qualifiedByName = "parseDiscount")
-    @Mapping(target = "discountedPrice", source = "raw", qualifiedByName = "calculateDiscountedPrice")
-    @Mapping(target = "currency", source = "price", qualifiedByName = "parseCurrency")
-    @Mapping(target = "productUrl", source = "link")
-    @Mapping(target = "status", expression = "java(calculateListingStatus.apply(raw.getAvailability()))")
-    @Mapping(target = "checkedAt", expression = "java(Instant.now())")
     /**
      * Converts raw scraped values into a normalized listing.
      *
@@ -49,10 +39,19 @@ public interface CrawlerMapper {
      *            function that maps raw availability text to listing status.
      * @return normalized {@link StoreListing} instance.
      */
+    @Mapping(target = "store", expression = "java(storeName)")
+    @Mapping(target = "productName", source = "figurineRawName")
+    @Mapping(target = "lineUp", ignore = true)
+    @Mapping(target = "price", source = "price", qualifiedByName = "parsePrice")
+    @Mapping(target = "discount", source = "discount", qualifiedByName = "parseDiscount")
+    @Mapping(target = "discountedPrice", source = "raw", qualifiedByName = "calculateDiscountedPrice")
+    @Mapping(target = "currency", source = "price", qualifiedByName = "parseCurrency")
+    @Mapping(target = "productUrl", source = "link")
+    @Mapping(target = "status", expression = "java(calculateListingStatus.apply(raw.getAvailability()))")
+    @Mapping(target = "checkedAt", expression = "java(Instant.now())")
     StoreListing toStoreListing(RawStoreListing raw, @Context StoreName storeName,
             @Context Function<String, ListingStatus> calculateListingStatus);
 
-    @Named("parsePrice")
     /**
      * Parses the numeric portion of a raw price string.
      *
@@ -60,6 +59,7 @@ public interface CrawlerMapper {
      *            raw price text.
      * @return parsed price, or {@code null} when parsing is not possible.
      */
+    @Named("parsePrice")
     default BigDecimal parsePrice(String priceString) {
         if (priceString == null || priceString.isBlank()) {
             return null;
@@ -81,7 +81,6 @@ public interface CrawlerMapper {
         return null;
     }
 
-    @Named("parseDiscount")
     /**
      * Parses discount percentage from raw discount text.
      *
@@ -89,6 +88,7 @@ public interface CrawlerMapper {
      *            raw discount text.
      * @return parsed discount percent, or {@code null} if unavailable/invalid.
      */
+    @Named("parseDiscount")
     default BigDecimal parseDiscount(String discountString) {
         if (discountString == null || discountString.isBlank()) {
             return null;
@@ -104,7 +104,6 @@ public interface CrawlerMapper {
         return null;
     }
 
-    @Named("calculateDiscountedPrice")
     /**
      * Calculates discounted price using parsed base price and discount percentage.
      *
@@ -113,6 +112,7 @@ public interface CrawlerMapper {
      * @return discounted price, original price if no discount exists, or
      *         {@code null} when price is unavailable.
      */
+    @Named("calculateDiscountedPrice")
     default BigDecimal calculateDiscountedPrice(RawStoreListing raw) {
         if (raw == null) {
             return null;
@@ -138,7 +138,6 @@ public interface CrawlerMapper {
         return originalPrice.subtract(discountAmount.abs()).setScale(2, RoundingMode.HALF_UP);
     }
 
-    @Named("parseCurrency")
     /**
      * Resolves currency from known alphabetic prefixes in raw price text.
      *
@@ -146,6 +145,7 @@ public interface CrawlerMapper {
      *            raw price text.
      * @return parsed currency, or {@code null} when no known prefix is found.
      */
+    @Named("parseCurrency")
     default Currency parseCurrency(String priceString) {
         if (priceString == null || priceString.isBlank()) {
             return null;
