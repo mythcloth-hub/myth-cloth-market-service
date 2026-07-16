@@ -4,15 +4,16 @@ import org.jsoup.nodes.Element;
 import org.springframework.stereotype.Component;
 
 import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
-import com.mesofi.mythclothmarket.crawler.model.RawStoreListing;
+import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper;
+import com.mesofi.mythclothmarket.crawler.mapper.RawStoreListing;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
 import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
 
 @Component
 public class BigBadToysStoreCrawler extends AbstractPaginatedStoreCrawler {
 
-    protected BigBadToysStoreCrawler(PageFetcher pageFetcher) {
-        super(pageFetcher);
+    protected BigBadToysStoreCrawler(PageFetcher pageFetcher, CrawlerMapper mapper) {
+        super(pageFetcher, mapper);
     }
 
     @Override

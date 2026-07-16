@@ -5,18 +5,23 @@ import java.util.List;
 import com.mesofi.mythclothmarket.crawler.AbstractPaginatedStoreCrawler;
 import com.mesofi.mythclothmarket.crawler.NinNinGameStoreCrawler;
 import com.mesofi.mythclothmarket.crawler.fetcher.JsoupHtmlFetcher;
+import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapperImpl;
 import com.mesofi.mythclothmarket.crawler.model.StoreListing;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
 
 public class NinNinGameJsoupExample {
-    public static void main(String[] args) {
+    static void main(String[] args) {
 
-        AbstractPaginatedStoreCrawler paginatedStoreCrawler = new NinNinGameStoreCrawler(new JsoupHtmlFetcher());
+        AbstractPaginatedStoreCrawler paginatedStoreCrawler = new NinNinGameStoreCrawler(new JsoupHtmlFetcher(),
+                new CrawlerMapperImpl());
 
         StoreName storeName = paginatedStoreCrawler.store();
         List<StoreListing> storeListings = paginatedStoreCrawler.crawlListings();
 
         System.out.println("Store: " + storeName);
         System.out.println("Listings: " + storeListings.size());
+        for (StoreListing storeListing : storeListings) {
+            System.out.println("Data: " + storeListing);
+        }
     }
 }

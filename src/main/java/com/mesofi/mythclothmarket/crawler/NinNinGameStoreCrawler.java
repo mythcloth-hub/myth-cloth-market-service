@@ -6,15 +6,16 @@ import org.jsoup.nodes.Element;
 import org.springframework.stereotype.Component;
 
 import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
-import com.mesofi.mythclothmarket.crawler.model.RawStoreListing;
+import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper;
+import com.mesofi.mythclothmarket.crawler.mapper.RawStoreListing;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
 import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
 
 @Component
 public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
 
-    public NinNinGameStoreCrawler(PageFetcher pageFetcher) {
-        super(pageFetcher);
+    public NinNinGameStoreCrawler(PageFetcher pageFetcher, CrawlerMapper mapper) {
+        super(pageFetcher, mapper);
     }
 
     @Override
@@ -38,6 +39,9 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
                     .ifPresent(discount -> priceStore.setDiscount(discount.text()));
         });
 
+        Optional.ofNullable(element.selectFirst(selectors().availability()))
+                .ifPresent(availabilityElement -> priceStore.setAvailability(availabilityElement.text()));
+
         return priceStore;
     }
 
@@ -59,6 +63,7 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
     @Override
     public StorePageSelectors selectors() {
         return new StorePageSelectors(".general_block_card.ajax_block_product.item", "#pagination_next_bottom a",
-                "a.product-name", "div.price_container", "span.price", "span.pill.orange");
+                "a.product-name", "div.price_container", "span.price", "span.pill.orange",
+                "div.actions > button, div.actions > span");
     }
 }

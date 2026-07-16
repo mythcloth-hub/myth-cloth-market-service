@@ -71,6 +71,10 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok'
     implementation 'com.microsoft.playwright:playwright:1.54.0'
     implementation 'org.jsoup:jsoup:1.18.1'
+
+    // --- Mapping ---
+    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 }
 
 jacoco {

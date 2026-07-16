@@ -11,7 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
-import com.mesofi.mythclothmarket.crawler.model.RawStoreListing;
+import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper;
+import com.mesofi.mythclothmarket.crawler.mapper.RawStoreListing;
 import com.mesofi.mythclothmarket.crawler.model.StoreListing;
 import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
 
@@ -20,9 +21,11 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
     Logger log = LoggerFactory.getLogger(AbstractPaginatedStoreCrawler.class);
 
     private final PageFetcher pageFetcher;
+    private final CrawlerMapper crawlerMapper;
 
-    protected AbstractPaginatedStoreCrawler(PageFetcher pageFetcher) {
+    protected AbstractPaginatedStoreCrawler(PageFetcher pageFetcher, CrawlerMapper mapper) {
         this.pageFetcher = pageFetcher;
+        this.crawlerMapper = mapper;
     }
 
     @Override
@@ -51,7 +54,7 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
         log.info("Finished retrieving store listing info for {}. Total pages: {}, Total items: {}", store(), pageCount,
                 marketPriceStoreList.size());
 
-        return List.of();
+        return marketPriceStoreList.stream().map(raw -> crawlerMapper.toStoreListing(raw, store())).toList();
     }
 
     protected abstract RawStoreListing parseListing(Element element);

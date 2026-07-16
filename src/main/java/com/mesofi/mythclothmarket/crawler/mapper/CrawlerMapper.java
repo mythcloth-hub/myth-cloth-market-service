@@ -1,0 +1,141 @@
+package com.mesofi.mythclothmarket.crawler.mapper;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Currency;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.mapstruct.Context;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
+
+import com.mesofi.mythclothmarket.crawler.model.ListingStatus;
+import com.mesofi.mythclothmarket.crawler.model.StoreListing;
+import com.mesofi.mythclothmarket.crawler.model.StoreName;
+
+@Mapper(componentModel = "spring")
+public interface CrawlerMapper {
+
+    // Pre-compile the regex pattern once to improve parsing performance
+    // significantly
+    Pattern PRICE_PATTERN = Pattern.compile("[0-9.,]+");
+    Pattern DISCOUNT_PATTERN = Pattern.compile("\\d+");
+    Pattern CURRENCY_PREFIX_PATTERN = Pattern.compile("^[A-Za-z]+");
+
+    @Mapping(target = "store", expression = "java(storeName)")
+    @Mapping(target = "productName", source = "figurineRawName")
+    @Mapping(target = "lineUp", ignore = true)
+    @Mapping(target = "price", source = "price", qualifiedByName = "parsePrice")
+    @Mapping(target = "discount", source = "discount", qualifiedByName = "parseDiscount")
+    @Mapping(target = "discountedPrice", source = "raw", qualifiedByName = "calculateDiscountedPrice")
+    @Mapping(target = "currency", source = "price", qualifiedByName = "parseCurrency")
+    @Mapping(target = "productUrl", source = "link")
+    @Mapping(target = "status", source = "availability", qualifiedByName = "parseStatus")
+    @Mapping(target = "checkedAt", expression = "java(Instant.now())")
+    StoreListing toStoreListing(RawStoreListing raw, @Context StoreName storeName);
+
+    @Named("parsePrice")
+    default BigDecimal parsePrice(String priceString) {
+        if (priceString == null || priceString.isBlank()) {
+            return null;
+        }
+
+        Matcher matcher = PRICE_PATTERN.matcher(priceString);
+        if (matcher.find()) {
+            try {
+                // Remove commas to prevent NumberFormatException
+                String cleanNumber = matcher.group().replace(",", "");
+                return new BigDecimal(cleanNumber);
+            } catch (NumberFormatException e) {
+                // Protects your crawler from crashing if it encounters badly formed data (e.g.,
+                // "1.2.3")
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    @Named("parseDiscount")
+    default BigDecimal parseDiscount(String discountString) {
+        if (discountString == null || discountString.isBlank()) {
+            return null;
+        }
+        Matcher matcher = DISCOUNT_PATTERN.matcher(discountString);
+        if (matcher.find()) {
+            try {
+                return new BigDecimal(matcher.group());
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    @Named("calculateDiscountedPrice")
+    default BigDecimal calculateDiscountedPrice(RawStoreListing raw) {
+        if (raw == null) {
+            return null;
+        }
+
+        BigDecimal originalPrice = parsePrice(raw.getPrice());
+        if (originalPrice == null) {
+            return null;
+        }
+
+        BigDecimal discountPercent = parseDiscount(raw.getDiscount());
+        // If there is no discount, the discounted price is simply the original price
+        if (discountPercent == null || discountPercent.compareTo(BigDecimal.ZERO) == 0) {
+            return originalPrice;
+        }
+
+        // Formula: DiscountAmount = Price * (DiscountPercent / 100)
+        BigDecimal discountFactor = discountPercent.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
+        BigDecimal discountAmount = originalPrice.multiply(discountFactor);
+
+        // Formula: DiscountedPrice = Price - DiscountAmount
+        // Set scale to 2 decimal places for financial calculations
+        return originalPrice.subtract(discountAmount.abs()).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    @Named("parseCurrency")
+    default Currency parseCurrency(String priceString) {
+        if (priceString == null || priceString.isBlank()) {
+            return null;
+        }
+
+        Matcher matcher = CURRENCY_PREFIX_PATTERN.matcher(priceString);
+        if (matcher.find()) {
+            String prefix = matcher.group().toUpperCase();
+
+            try {
+                return switch (prefix) {
+                    case "MEX" -> Currency.getInstance("MXN"); // Mexican Peso
+                    case "US", "USD" -> Currency.getInstance("USD"); // US Dollar
+                    case "EUR" -> Currency.getInstance("EUR"); // Euro
+                    case "JPY" -> Currency.getInstance("JPY"); // Japanese Yen
+                    default -> null; // Unknown prefix, fallback to null
+                };
+            } catch (IllegalArgumentException e) {
+                // Protects your mapper if an unsupported ISO 4217 code is passed
+                return null;
+            }
+        }
+        return null;
+    }
+
+    @Named("parseStatus")
+    default ListingStatus parseStatus(String availability) {
+        if (availability == null || availability.isBlank()) {
+            return null;
+        }
+
+        return switch (availability.toLowerCase()) {
+            case "add to cart" -> ListingStatus.IN_STOCK;
+            case "soon available" -> ListingStatus.OUT_OF_STOCK;
+            default -> ListingStatus.UNKNOWN;
+        };
+    }
+}

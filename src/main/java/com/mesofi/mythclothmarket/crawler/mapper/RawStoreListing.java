@@ -1,4 +1,4 @@
-package com.mesofi.mythclothmarket.crawler.model;
+package com.mesofi.mythclothmarket.crawler.mapper;
 
 import lombok.Getter;
 import lombok.Setter;
