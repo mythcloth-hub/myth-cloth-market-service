@@ -9,7 +9,16 @@ import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapperImpl;
 import com.mesofi.mythclothmarket.crawler.model.StoreListing;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
 
+/**
+ * Standalone Jsoup crawler example for Nin-Nin-Game.
+ */
 public class NinNinGameJsoupExample {
+    /**
+     * Runs the Jsoup-based crawler example and prints normalized listing output.
+     *
+     * @param args
+     *            unused command-line arguments.
+     */
     static void main(String[] args) {
 
         AbstractPaginatedStoreCrawler paginatedStoreCrawler = new NinNinGameStoreCrawler(new JsoupHtmlFetcher(),

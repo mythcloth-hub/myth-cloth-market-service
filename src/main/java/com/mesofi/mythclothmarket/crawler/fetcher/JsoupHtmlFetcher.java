@@ -6,9 +6,19 @@ import org.jsoup.Jsoup;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * {@link PageFetcher} backed by Jsoup HTTP requests.
+ */
 @Slf4j
 public class JsoupHtmlFetcher implements PageFetcher {
 
+    /**
+     * Fetches HTML with browser-like headers to reduce anti-bot blocking.
+     *
+     * @param url
+     *            absolute page URL.
+     * @return HTML content, or {@code null} when the request fails.
+     */
     @Override
     public String fetch(final String url) {
         try {

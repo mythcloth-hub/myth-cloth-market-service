@@ -12,11 +12,21 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.options.WaitForSelectorState;
 
+/**
+ * Standalone Playwright example that prints figurine names from Nin-Nin-Game.
+ */
 public class NinNinGameFigurinesExample {
     private static final String CATEGORY_URL = "https://www.nin-nin-game.com/en/myth-cloth-saint-seiya";
     private static final String PRODUCT_NAME_SELECTOR = "a.product-name";
     private static final String NEXT_PAGE_SELECTOR = "#pagination_next_bottom a";
 
+    /**
+     * Runs the Playwright-based pagination scraper and prints all discovered
+     * figurine names.
+     *
+     * @param args
+     *            unused command-line arguments.
+     */
     public static void main(String[] args) {
 
         System.out.println("Initializing Playwright with Nin-Nin-Game");

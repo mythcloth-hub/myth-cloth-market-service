@@ -4,6 +4,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+/**
+ * Raw listing fields extracted directly from HTML before normalization.
+ */
 @Getter
 @Setter
 @ToString

@@ -3,6 +3,7 @@ package com.mesofi.mythclothmarket.crawler.mapper;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Currency;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,6 +16,9 @@ import com.mesofi.mythclothmarket.crawler.model.ListingStatus;
 import com.mesofi.mythclothmarket.crawler.model.StoreListing;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
 
+/**
+ * Maps raw crawler fields into normalized {@link StoreListing} records.
+ */
 @Mapper(componentModel = "spring")
 public interface CrawlerMapper {
 
@@ -32,11 +36,30 @@ public interface CrawlerMapper {
     @Mapping(target = "discountedPrice", source = "raw", qualifiedByName = "calculateDiscountedPrice")
     @Mapping(target = "currency", source = "price", qualifiedByName = "parseCurrency")
     @Mapping(target = "productUrl", source = "link")
-    @Mapping(target = "status", source = "availability", qualifiedByName = "parseStatus")
+    @Mapping(target = "status", expression = "java(calculateListingStatus.apply(raw.getAvailability()))")
     @Mapping(target = "checkedAt", expression = "java(Instant.now())")
-    StoreListing toStoreListing(RawStoreListing raw, @Context StoreName storeName);
+    /**
+     * Converts raw scraped values into a normalized listing.
+     *
+     * @param raw
+     *            raw listing values extracted from HTML.
+     * @param storeName
+     *            store identifier for the listing.
+     * @param calculateListingStatus
+     *            function that maps raw availability text to listing status.
+     * @return normalized {@link StoreListing} instance.
+     */
+    StoreListing toStoreListing(RawStoreListing raw, @Context StoreName storeName,
+            @Context Function<String, ListingStatus> calculateListingStatus);
 
     @Named("parsePrice")
+    /**
+     * Parses the numeric portion of a raw price string.
+     *
+     * @param priceString
+     *            raw price text.
+     * @return parsed price, or {@code null} when parsing is not possible.
+     */
     default BigDecimal parsePrice(String priceString) {
         if (priceString == null || priceString.isBlank()) {
             return null;
@@ -59,6 +82,13 @@ public interface CrawlerMapper {
     }
 
     @Named("parseDiscount")
+    /**
+     * Parses discount percentage from raw discount text.
+     *
+     * @param discountString
+     *            raw discount text.
+     * @return parsed discount percent, or {@code null} if unavailable/invalid.
+     */
     default BigDecimal parseDiscount(String discountString) {
         if (discountString == null || discountString.isBlank()) {
             return null;
@@ -75,6 +105,14 @@ public interface CrawlerMapper {
     }
 
     @Named("calculateDiscountedPrice")
+    /**
+     * Calculates discounted price using parsed base price and discount percentage.
+     *
+     * @param raw
+     *            raw listing values.
+     * @return discounted price, original price if no discount exists, or
+     *         {@code null} when price is unavailable.
+     */
     default BigDecimal calculateDiscountedPrice(RawStoreListing raw) {
         if (raw == null) {
             return null;
@@ -101,6 +139,13 @@ public interface CrawlerMapper {
     }
 
     @Named("parseCurrency")
+    /**
+     * Resolves currency from known alphabetic prefixes in raw price text.
+     *
+     * @param priceString
+     *            raw price text.
+     * @return parsed currency, or {@code null} when no known prefix is found.
+     */
     default Currency parseCurrency(String priceString) {
         if (priceString == null || priceString.isBlank()) {
             return null;
@@ -126,16 +171,4 @@ public interface CrawlerMapper {
         return null;
     }
 
-    @Named("parseStatus")
-    default ListingStatus parseStatus(String availability) {
-        if (availability == null || availability.isBlank()) {
-            return null;
-        }
-
-        return switch (availability.toLowerCase()) {
-            case "add to cart" -> ListingStatus.IN_STOCK;
-            case "soon available" -> ListingStatus.OUT_OF_STOCK;
-            default -> ListingStatus.UNKNOWN;
-        };
-    }
 }

@@ -8,7 +8,17 @@ import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 
+/**
+ * {@link PageFetcher} backed by a headless Playwright browser.
+ */
 public class PlaywrightHtmlFetcher implements PageFetcher {
+    /**
+     * Fetches fully rendered HTML by navigating the page in a headless browser.
+     *
+     * @param url
+     *            absolute page URL.
+     * @return rendered page HTML.
+     */
     @Override
     public String fetch(String url) {
 
