@@ -13,7 +13,7 @@ import com.mesofi.mythclothmarket.crawler.model.StoreName;
 import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
 
 /**
- * Placeholder crawler implementation for BigBadToyStore.
+ * Crawler implementation for BBST listing pages.
  */
 @Component
 public class BigBadToysStoreCrawler extends AbstractPaginatedStoreCrawler {
@@ -45,7 +45,6 @@ public class BigBadToysStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     protected RawStoreListing parseListing(Element element) {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -54,8 +53,7 @@ public class BigBadToysStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     protected String storeBaseUrl() {
-        // TODO Auto-generated method stub
-        return null;
+        return "https://www.bigbadtoystore.com";
     }
 
     /**
@@ -63,8 +61,7 @@ public class BigBadToysStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     protected String getInitialSearchUrl() {
-        // TODO Auto-generated method stub
-        return null;
+        return "/Search?SearchText=myth+cloth";
     }
 
     /**
@@ -72,8 +69,7 @@ public class BigBadToysStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     protected int getMaxPages() {
-        // TODO Auto-generated method stub
-        return 0;
+        return 10;
     }
 
     /**
@@ -81,7 +77,6 @@ public class BigBadToysStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     protected StorePageSelectors selectors() {
-        // TODO Auto-generated method stub
         return null;
     }
 
