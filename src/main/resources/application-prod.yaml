@@ -11,7 +11,7 @@ myth-cloth-market-service:
         cron: ${NIN_NIN_GAME_CRON:0 0 12 * * ?}
         enabled: true
 
-      - key: "BBTS"
-        name: "Big Bad Toy Store Crawler"
-        cron: ${BBTS_CRON:0 0 12 * * ?}
+      - key: "LUNA_PARK"
+        name: "Luna Park Crawler"
+        cron: ${LUNA_PARK_CRON:0 0 12 * * ?}
         enabled: true
