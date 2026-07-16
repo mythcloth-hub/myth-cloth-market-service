@@ -1,9 +1,14 @@
+logging:
+  level:
+    root: INFO
+    org.quartz: DEBUG
+
 myth-cloth-market-service:
   crawler:
     jobs:
       - key: "NIN_NIN_GAME"
         name: "Nin Nin Game Crawler"
-        cron: "0 0 */2 * * ?" # Every 2 hours
+        cron: "0 * * * * ?" # Every 2 hours
         enabled: true
 
       - key: "BBTS"

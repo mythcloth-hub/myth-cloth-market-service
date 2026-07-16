@@ -13,8 +13,17 @@ myth-cloth-market-service:
 
 server:
   servlet:
-    context-path: /
+    context-path: /api/v1
 
 spring:
   application:
     name: myth-cloth-market-service
+  quartz:
+    properties:
+      org:
+        quartz:
+          scheduler:
+            instanceName: MythClothMarketServiceScheduler
+            instanceId: AUTO
+          threadPool:
+            threadCount: 5

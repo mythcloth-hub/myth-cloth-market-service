@@ -21,7 +21,11 @@ public class StoreCrawlerJob implements Job {
         MarketService marketService = (MarketService) context.getJobDetail().getJobDataMap().get("marketService");
         StoreCrawler storeCrawler = (StoreCrawler) context.getJobDetail().getJobDataMap().get("storeCrawler");
 
-        log.info("Quartz Job triggered for store: {}", storeCrawler.store());
+        log.info("Quartz Job triggered for store: {} ...", storeCrawler.store());
+
+        // delegates to the service layer ...
         marketService.retrieveAndPublishPrices(storeCrawler);
+
+        log.info("Quartz Job finished for store: {} ...", storeCrawler.store());
     }
 }
