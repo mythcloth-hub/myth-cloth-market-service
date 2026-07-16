@@ -20,7 +20,8 @@ public class MarketService {
         List<StoreListing> storeListings = storeCrawler.crawlListings();
         for (StoreListing storeListing : storeListings) {
             // publishes each listing to the message broker ...
-            log.info("Publishing listing: {}", storeListing);
+            log.debug("Publishing listing: {}", storeListing);
         }
+        log.info("{} figurines were published", storeListings.size());
     }
 }
