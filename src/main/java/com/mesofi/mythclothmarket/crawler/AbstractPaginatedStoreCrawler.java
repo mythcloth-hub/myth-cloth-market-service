@@ -1,6 +1,7 @@
 package com.mesofi.mythclothmarket.crawler;
 
 import java.util.ArrayList;
+import java.util.Currency;
 import java.util.List;
 import java.util.function.Function;
 
@@ -16,6 +17,7 @@ import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper;
 import com.mesofi.mythclothmarket.crawler.mapper.RawStoreListing;
 import com.mesofi.mythclothmarket.crawler.model.ListingStatus;
 import com.mesofi.mythclothmarket.crawler.model.StoreListing;
+import com.mesofi.mythclothmarket.crawler.model.StoreName;
 import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
 
 /**
@@ -53,7 +55,8 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
         List<StoreListing> marketPriceStoreList = new ArrayList<>();
         final String baseUrl = storeBaseUrl();
         final StorePageSelectors pageSelectors = selectors();
-        final var storeName = store();
+        final StoreName storeName = store();
+        final Function<String, Currency> currencyResolver = this::determineCurrency;
         final Function<String, ListingStatus> listingStatusResolver = this::calculateListingStatus;
 
         String url = baseUrl + getInitialSearchUrl();
@@ -71,8 +74,8 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
             Elements figurineItems = doc.select(pageSelectors.item());
             log.info("Found {} figurine items on page {}", figurineItems.size(), pageCount);
 
-            figurineItems.forEach(element -> marketPriceStoreList
-                    .add(crawlerMapper.toStoreListing(parseListing(element), storeName, listingStatusResolver)));
+            figurineItems.forEach(element -> marketPriceStoreList.add(crawlerMapper
+                    .toStoreListing(parseListing(element), storeName, currencyResolver, listingStatusResolver)));
 
             url = getNextPageUrl(doc, pageSelectors, baseUrl);
         }
@@ -111,6 +114,15 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
      * @return CSS selectors used by this crawler implementation.
      */
     protected abstract StorePageSelectors selectors();
+
+    /**
+     * Maps raw price text to a normalized currency.
+     *
+     * @param priceText
+     *            raw price text extracted from the store page.
+     * @return normalized currency.
+     */
+    protected abstract Currency determineCurrency(String priceText);
 
     /**
      * Maps raw availability text to a normalized listing status.

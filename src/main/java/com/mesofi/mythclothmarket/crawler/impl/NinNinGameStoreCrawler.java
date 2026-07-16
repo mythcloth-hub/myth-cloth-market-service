@@ -1,6 +1,9 @@
 package com.mesofi.mythclothmarket.crawler.impl;
 
+import java.util.Currency;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jsoup.nodes.Element;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -15,23 +18,38 @@ import com.mesofi.mythclothmarket.crawler.model.StoreName;
 import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
 
 /**
- * Crawler implementation for Nin-Nin-Game listing pages.
+ * {@link com.mesofi.mythclothmarket.crawler.StoreCrawler} implementation for
+ * the Nin-Nin-Game online store.
+ * <p>
+ * This crawler navigates the paginated Myth Cloth product listings published by
+ * Nin-Nin-Game, extracts the raw product information from each listing, and
+ * delegates the normalization of the scraped values to the shared crawler
+ * infrastructure.
+ * <p>
+ * In addition to extracting product details, this implementation translates
+ * Nin-Nin-Game specific currency prefixes and availability labels into the
+ * application's normalized domain model.
  */
 @Component
 public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
 
+    private static final Pattern CURRENCY_PREFIX_PATTERN = Pattern.compile("^[A-Za-z]+");
+
     /**
+     * Creates a crawler for the Nin-Nin-Game storefront.
+     *
      * @param pageFetcher
-     *            HTML fetcher used to retrieve Nin-Nin-Game pages.
+     *            the component responsible for retrieving the HTML pages
      * @param mapper
-     *            mapper that converts scraped values to normalized listings.
+     *            the mapper that converts raw scraped values into normalized
+     *            {@code StoreListing} instances
      */
     public NinNinGameStoreCrawler(@Qualifier("jsoupHtmlFetcher") PageFetcher pageFetcher, CrawlerMapper mapper) {
         super(pageFetcher, mapper);
     }
 
     /**
-     * @return Nin-Nin-Game store identifier.
+     * {@inheritDoc}
      */
     @Override
     public StoreName store() {
@@ -39,11 +57,15 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
     }
 
     /**
-     * Extracts raw listing fields from a Nin-Nin-Game listing card element.
+     * Extracts the raw product information from a Nin-Nin-Game listing card.
+     * <p>
+     * The returned {@link RawStoreListing} contains the values exactly as they
+     * appear on the HTML page. These values are subsequently normalized into the
+     * domain model by the shared crawler infrastructure.
      *
      * @param element
-     *            listing card root element.
-     * @return raw listing values extracted from the card.
+     *            the HTML element representing a single product listing
+     * @return the extracted raw listing information
      */
     @Override
     public RawStoreListing parseListing(Element element) {
@@ -102,11 +124,54 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
     }
 
     /**
-     * Converts Nin-Nin-Game availability labels into normalized statuses.
+     * Determines the currency of a listing by inspecting the currency prefix
+     * contained in the raw price text.
+     * <p>
+     * Nin-Nin-Game prefixes prices with abbreviations such as {@code MEX},
+     * {@code USD}, {@code EUR}, or {@code JPY}. These prefixes are mapped to their
+     * corresponding ISO 4217 currencies.
+     *
+     * @param priceText
+     *            the raw price text extracted from the listing
+     * @return the resolved currency, or {@code null} if the prefix is unknown or
+     *         cannot be determined
+     */
+    @Override
+    public Currency determineCurrency(String priceText) {
+        if (priceText == null || priceText.isBlank()) {
+            return null;
+        }
+
+        Matcher matcher = CURRENCY_PREFIX_PATTERN.matcher(priceText);
+        if (matcher.find()) {
+            String prefix = matcher.group().toUpperCase();
+
+            try {
+                return switch (prefix) {
+                    case "MEX" -> Currency.getInstance("MXN"); // Mexican Peso
+                    case "US", "USD" -> Currency.getInstance("USD"); // US Dollar
+                    case "EUR" -> Currency.getInstance("EUR"); // Euro
+                    case "JPY" -> Currency.getInstance("JPY"); // Japanese Yen
+                    default -> null; // Unknown prefix, fallback to null
+                };
+            } catch (IllegalArgumentException e) {
+                // Protects your mapper if an unsupported ISO 4217 code is passed
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Converts Nin-Nin-Game availability labels into normalized listing statuses.
+     * <p>
+     * The crawler maps the store-specific availability text into the corresponding
+     * {@link ListingStatus} understood by the application.
      *
      * @param availabilityText
-     *            raw availability label.
-     * @return mapped listing status, or {@code null} when text is blank.
+     *            the raw availability text extracted from the listing
+     * @return the normalized listing status, or {@code null} if the availability
+     *         cannot be determined
      */
     @Override
     public ListingStatus calculateListingStatus(String availabilityText) {

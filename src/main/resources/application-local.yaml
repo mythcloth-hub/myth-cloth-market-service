@@ -9,9 +9,9 @@ myth-cloth-market-service:
       - key: "NIN_NIN_GAME"
         name: "Nin Nin Game Crawler"
         cron: "0 * * * * ?" # Every 2 hours
-        enabled: true
+        enabled: false
 
-      - key: "BBTS"
-        name: "Big Bad Toy Store Crawler"
+      - key: "LUNA_PARK"
+        name: "Luna Park Crawler"
         cron: "0 0 12 * * ?"   # Every day at noon
-        enabled: true
+        enabled: false

@@ -9,6 +9,7 @@ import com.mesofi.mythclothmarket.crawler.model.StoreName;
  * Contract for crawling listings from a specific store.
  */
 public interface StoreCrawler {
+
     /**
      * @return store identifier for the crawler implementation.
      */

@@ -26,7 +26,6 @@ public interface CrawlerMapper {
     // significantly
     Pattern PRICE_PATTERN = Pattern.compile("[0-9.,]+");
     Pattern DISCOUNT_PATTERN = Pattern.compile("\\d+");
-    Pattern CURRENCY_PREFIX_PATTERN = Pattern.compile("^[A-Za-z]+");
 
     /**
      * Converts raw scraped values into a normalized listing.
@@ -45,11 +44,12 @@ public interface CrawlerMapper {
     @Mapping(target = "price", source = "price", qualifiedByName = "parsePrice")
     @Mapping(target = "discount", source = "discount", qualifiedByName = "parseDiscount")
     @Mapping(target = "discountedPrice", source = "raw", qualifiedByName = "calculateDiscountedPrice")
-    @Mapping(target = "currency", source = "price", qualifiedByName = "parseCurrency")
+    @Mapping(target = "currency", expression = "java(calculateCurrency.apply(raw.getPrice()))")
     @Mapping(target = "productUrl", source = "link")
     @Mapping(target = "status", expression = "java(calculateListingStatus.apply(raw.getAvailability()))")
     @Mapping(target = "checkedAt", expression = "java(Instant.now())")
     StoreListing toStoreListing(RawStoreListing raw, @Context StoreName storeName,
+            @Context Function<String, Currency> calculateCurrency,
             @Context Function<String, ListingStatus> calculateListingStatus);
 
     /**
@@ -136,39 +136,6 @@ public interface CrawlerMapper {
         // Formula: DiscountedPrice = Price - DiscountAmount
         // Set scale to 2 decimal places for financial calculations
         return originalPrice.subtract(discountAmount.abs()).setScale(2, RoundingMode.HALF_UP);
-    }
-
-    /**
-     * Resolves currency from known alphabetic prefixes in raw price text.
-     *
-     * @param priceString
-     *            raw price text.
-     * @return parsed currency, or {@code null} when no known prefix is found.
-     */
-    @Named("parseCurrency")
-    default Currency parseCurrency(String priceString) {
-        if (priceString == null || priceString.isBlank()) {
-            return null;
-        }
-
-        Matcher matcher = CURRENCY_PREFIX_PATTERN.matcher(priceString);
-        if (matcher.find()) {
-            String prefix = matcher.group().toUpperCase();
-
-            try {
-                return switch (prefix) {
-                    case "MEX" -> Currency.getInstance("MXN"); // Mexican Peso
-                    case "US", "USD" -> Currency.getInstance("USD"); // US Dollar
-                    case "EUR" -> Currency.getInstance("EUR"); // Euro
-                    case "JPY" -> Currency.getInstance("JPY"); // Japanese Yen
-                    default -> null; // Unknown prefix, fallback to null
-                };
-            } catch (IllegalArgumentException e) {
-                // Protects your mapper if an unsupported ISO 4217 code is passed
-                return null;
-            }
-        }
-        return null;
     }
 
 }

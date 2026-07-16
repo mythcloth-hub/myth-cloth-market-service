@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.springframework.stereotype.Component;
 
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +33,9 @@ public class JsoupHtmlFetcher implements PageFetcher {
                     .get();
 
             String title = document.title();
-            String bodyText = document.body() == null ? "" : document.body().text();
+            Element body = document.body();
+            String bodyText = body.text();
+
             if (isBlockedPage(title, bodyText)) {
                 throw new BlockedPageException("Blocked by anti-bot challenge while fetching URL: " + url);
             }
@@ -48,8 +51,7 @@ public class JsoupHtmlFetcher implements PageFetcher {
         String normalizedTitle = title == null ? "" : title.toLowerCase();
         String normalizedBody = bodyText == null ? "" : bodyText.toLowerCase();
 
-        return normalizedTitle.contains("challenge")
-                || normalizedBody.contains("we're confirming that you're human")
+        return normalizedTitle.contains("challenge") || normalizedBody.contains("we're confirming that you're human")
                 || normalizedBody.contains("enable javascript and cookies to continue");
     }
 }
