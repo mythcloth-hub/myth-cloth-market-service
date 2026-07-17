@@ -154,24 +154,6 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
     }
 
     /**
-     * Extracts the value represented by the given selector.
-     * <p>
-     * If the selector specifies an attribute, the corresponding attribute value is
-     * returned. Otherwise, the element's visible text content is returned.
-     *
-     * @param elementSelector
-     *            the selector describing how to extract the value
-     * @param theElement
-     *            the matched HTML element
-     * @return the extracted and trimmed value
-     */
-    private String findElementValue(ElementSelector elementSelector, Element theElement) {
-        return elementSelector.attribute() == null
-                ? theElement.text().trim()
-                : theElement.attr(elementSelector.attribute()).trim();
-    }
-
-    /**
      * @return absolute base URL for the target store.
      */
     protected abstract String storeBaseUrl();
@@ -243,5 +225,23 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
             }
         }
         return null;
+    }
+
+    /**
+     * Extracts the value represented by the given selector.
+     * <p>
+     * If the selector specifies an attribute, the corresponding attribute value is
+     * returned. Otherwise, the element's visible text content is returned.
+     *
+     * @param elementSelector
+     *            the selector describing how to extract the value
+     * @param theElement
+     *            the matched HTML element
+     * @return the extracted and trimmed value
+     */
+    private String findElementValue(ElementSelector elementSelector, Element theElement) {
+        return elementSelector.attribute() == null
+                ? theElement.text().trim()
+                : theElement.attr(elementSelector.attribute()).trim();
     }
 }
