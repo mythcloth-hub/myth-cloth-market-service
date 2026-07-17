@@ -1,5 +1,7 @@
 package com.mesofi.mythclothmarket.crawler.model;
 
+import jakarta.annotation.Nonnull;
+
 /**
  * Defines the CSS selectors required to crawl product listings from a store
  * page.
@@ -27,7 +29,8 @@ package com.mesofi.mythclothmarket.crawler.model;
  *            the selector used to extract the product availability or stock
  *            status
  */
-public record StorePageSelectors(String listingContainer, String nextPage, ElementSelector productName,
-        ElementSelector productImage, ElementSelector productUrl, ElementSelector productPrice,
-        ElementSelector discount, ElementSelector availability) {
+public record StorePageSelectors(@Nonnull String listingContainer, @Nonnull String nextPage,
+        @Nonnull ElementSelector productName, @Nonnull ElementSelector productImage,
+        @Nonnull ElementSelector productUrl, @Nonnull ElementSelector productPrice, ElementSelector discount,
+        ElementSelector availability) {
 }

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.jsoup.Jsoup;
@@ -37,7 +38,7 @@ import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
  */
 public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
 
-    Logger log = LoggerFactory.getLogger(AbstractPaginatedStoreCrawler.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractPaginatedStoreCrawler.class);
 
     private final PageFetcher pageFetcher;
     private final CrawlerMapper crawlerMapper;
@@ -117,38 +118,17 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
      */
     protected RawStoreListing parseListing(Element element) {
         RawStoreListing priceStore = new RawStoreListing();
+        StorePageSelectors selectors = selectors();
 
-        // rawName
-        ElementSelector productNameSelector = selectors().productName();
-        Optional.ofNullable(element.selectFirst(productNameSelector.selector()))
-                .ifPresent(e -> priceStore.setRawName(findElementValue(productNameSelector, e)));
+        extractAndSet(element, selectors.productName(), priceStore::setRawName);
+        extractAndSet(element, selectors.productImage(), priceStore::setImageUrl);
+        extractAndSet(element, selectors.productUrl(), priceStore::setUrl);
+        extractAndSet(element, selectors.productPrice(), priceStore::setPrice);
 
-        // imageUrl
-        ElementSelector productImageSelector = selectors().productImage();
-        Optional.ofNullable(element.selectFirst(productImageSelector.selector()))
-                .ifPresent(e -> priceStore.setImageUrl(findElementValue(productImageSelector, e)));
-
-        // url
-        ElementSelector productUrlSelector = selectors().productUrl();
-        Optional.ofNullable(element.selectFirst(productUrlSelector.selector()))
-                .ifPresent(e -> priceStore.setUrl(findElementValue(productUrlSelector, e)));
-
-        // price
-        ElementSelector productPriceSelector = selectors().productPrice();
-        Optional.ofNullable(element.selectFirst(productPriceSelector.selector()))
-                .ifPresent(e -> priceStore.setPrice(findElementValue(productPriceSelector, e)));
-
-        // discount
-        ElementSelector discountSelector = selectors().discount();
-        Optional.ofNullable(discountSelector)
-                .flatMap(eSelector -> Optional.ofNullable(element.selectFirst(eSelector.selector())))
-                .ifPresent(e -> priceStore.setDiscount(findElementValue(discountSelector, e)));
-
-        // availability
-        ElementSelector availabilitySelector = selectors().availability();
-        Optional.ofNullable(availabilitySelector)
-                .flatMap(eSelector -> Optional.ofNullable(element.selectFirst(eSelector.selector())))
-                .ifPresent(e -> priceStore.setAvailability(findElementValue(availabilitySelector, e)));
+        Optional.ofNullable(selectors.discount())
+                .ifPresent(selector -> extractAndSet(element, selector, priceStore::setDiscount));
+        Optional.ofNullable(selectors.availability())
+                .ifPresent(selector -> extractAndSet(element, selector, priceStore::setAvailability));
 
         return priceStore;
     }
@@ -228,13 +208,33 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
     }
 
     /**
-     * Extracts the value represented by the given selector.
+     * Extracts a value from the specified HTML element using the provided selector
+     * and passes the extracted value to the supplied consumer.
      * <p>
-     * If the selector specifies an attribute, the corresponding attribute value is
+     * If no element matches the selector, no action is performed.
+     *
+     * @param element
+     *            the parent HTML element representing a product listing
+     * @param selector
+     *            the selector describing how to locate the child element and which
+     *            value to extract
+     * @param consumer
+     *            the consumer that receives the extracted value
+     */
+    private void extractAndSet(Element element, ElementSelector selector, Consumer<String> consumer) {
+        Optional.ofNullable(element.selectFirst(selector.selector()))
+                .ifPresent(e -> consumer.accept(findElementValue(selector, e)));
+    }
+
+    /**
+     * Extracts a value from the specified HTML element according to the supplied
+     * selector.
+     * <p>
+     * If the selector defines an attribute, the corresponding attribute value is
      * returned. Otherwise, the element's visible text content is returned.
      *
      * @param elementSelector
-     *            the selector describing how to extract the value
+     *            the selector describing which value to extract
      * @param theElement
      *            the matched HTML element
      * @return the extracted and trimmed value
