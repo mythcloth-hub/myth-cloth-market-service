@@ -12,6 +12,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
+import com.mesofi.mythclothmarket.crawler.model.LineUp;
 import com.mesofi.mythclothmarket.crawler.model.ListingStatus;
 import com.mesofi.mythclothmarket.crawler.model.StoreListing;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
@@ -40,7 +41,7 @@ public interface CrawlerMapper {
      */
     @Mapping(target = "store", expression = "java(storeName)")
     @Mapping(target = "productName", source = "rawName")
-    @Mapping(target = "lineUp", ignore = true)
+    @Mapping(target = "lineUp", expression = "java(calculateLineUp.apply(raw.getRawName()))")
     @Mapping(target = "price", source = "price", qualifiedByName = "parsePrice")
     @Mapping(target = "discount", source = "discount", qualifiedByName = "parseDiscount")
     @Mapping(target = "discountedPrice", source = "raw", qualifiedByName = "calculateDiscountedPrice")
@@ -50,7 +51,7 @@ public interface CrawlerMapper {
     @Mapping(target = "status", expression = "java(calculateListingStatus.apply(raw.getAvailability()))")
     @Mapping(target = "checkedAt", expression = "java(Instant.now())")
     StoreListing toStoreListing(RawStoreListing raw, @Context StoreName storeName,
-            @Context Function<String, Currency> calculateCurrency,
+            @Context Function<String, LineUp> calculateLineUp, @Context Function<String, Currency> calculateCurrency,
             @Context Function<String, ListingStatus> calculateListingStatus);
 
     /**

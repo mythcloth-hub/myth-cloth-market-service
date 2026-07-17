@@ -9,6 +9,7 @@ import com.mesofi.mythclothmarket.crawler.AbstractPaginatedStoreCrawler;
 import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
 import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper;
 import com.mesofi.mythclothmarket.crawler.model.ElementSelector;
+import com.mesofi.mythclothmarket.crawler.model.LineUp;
 import com.mesofi.mythclothmarket.crawler.model.ListingStatus;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
 import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
@@ -72,7 +73,7 @@ public class LunaParkStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     public int getMaxPages() {
-        return 10;
+        return 2;
     }
 
     /**
@@ -88,6 +89,17 @@ public class LunaParkStoreCrawler extends AbstractPaginatedStoreCrawler {
                         "src"),
                 new ElementSelector("a[data-hook=\"product-item-container\"]", "href"),
                 new ElementSelector("span[data-hook=\"product-item-price-to-pay\"]"), null, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public LineUp determineLineUp(String nameText) {
+        if (nameText.contains("ex")) {
+            return LineUp.MYTH_CLOTH_EX;
+        }
+        return LineUp.MYTH_CLOTH;
     }
 
     /**

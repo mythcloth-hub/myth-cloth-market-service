@@ -11,6 +11,7 @@ import com.mesofi.mythclothmarket.crawler.AbstractPaginatedStoreCrawler;
 import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
 import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper;
 import com.mesofi.mythclothmarket.crawler.model.ElementSelector;
+import com.mesofi.mythclothmarket.crawler.model.LineUp;
 import com.mesofi.mythclothmarket.crawler.model.ListingStatus;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
 import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
@@ -90,7 +91,10 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
                 new ElementSelector("span.pill.orange"),
                 new ElementSelector("div.actions > button, div.actions > span"));
     }
-
+    @Override
+    public LineUp determineLineUp(String nameText) {
+        return LineUp.MYTH_CLOTH;
+    }
     /**
      * Determines the currency of a listing by inspecting the currency prefix
      * contained in the raw price text.

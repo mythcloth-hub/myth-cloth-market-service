@@ -9,6 +9,7 @@ import com.mesofi.mythclothmarket.crawler.AbstractPaginatedStoreCrawler;
 import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
 import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper;
 import com.mesofi.mythclothmarket.crawler.model.ElementSelector;
+import com.mesofi.mythclothmarket.crawler.model.LineUp;
 import com.mesofi.mythclothmarket.crawler.model.ListingStatus;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
 import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
@@ -83,7 +84,10 @@ public class MyKombiniStoreCrawler extends AbstractPaginatedStoreCrawler {
                 new ElementSelector("a.product_img_link", "href"), new ElementSelector("span.price"), null,
                 new ElementSelector("a.exclusive.ajax_add_to_cart_button"));
     }
-
+    @Override
+    public LineUp determineLineUp(String nameText) {
+        return LineUp.MYTH_CLOTH;
+    }
     /**
      * Determines the currency used by MyKombini listings.
      * <p>

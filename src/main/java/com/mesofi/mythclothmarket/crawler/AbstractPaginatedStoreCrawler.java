@@ -2,8 +2,10 @@ package com.mesofi.mythclothmarket.crawler;
 
 import java.util.ArrayList;
 import java.util.Currency;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -18,6 +20,7 @@ import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
 import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper;
 import com.mesofi.mythclothmarket.crawler.mapper.RawStoreListing;
 import com.mesofi.mythclothmarket.crawler.model.ElementSelector;
+import com.mesofi.mythclothmarket.crawler.model.LineUp;
 import com.mesofi.mythclothmarket.crawler.model.ListingStatus;
 import com.mesofi.mythclothmarket.crawler.model.StoreListing;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
@@ -29,16 +32,26 @@ import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
  * <p>
  * This class encapsulates the common crawling workflow, including retrieving
  * HTML pages, traversing pagination, extracting raw listing data using
- * store-specific selectors, and converting the extracted information into
- * normalized {@link StoreListing} instances.
+ * store-specific selectors, normalizing product names, and converting the
+ * extracted information into normalized {@link StoreListing} instances.
  * <p>
  * Concrete subclasses are responsible only for providing store-specific
- * configuration such as the base URL, CSS selectors, currency resolution, and
- * listing status mapping.
+ * configuration such as the base URL, CSS selectors, lineup resolution,
+ * currency resolution, listing status mapping, and any additional product name
+ * normalization required by the target store.
  */
 public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractPaginatedStoreCrawler.class);
+
+    private static final Set<String> KEYWORDS_TO_REMOVE = new HashSet<>();
+
+    static {
+        KEYWORDS_TO_REMOVE.add("bandai");
+        KEYWORDS_TO_REMOVE.add("japan");
+        KEYWORDS_TO_REMOVE.add("saint");
+        KEYWORDS_TO_REMOVE.add("version");
+    }
 
     private final PageFetcher pageFetcher;
     private final CrawlerMapper crawlerMapper;
@@ -73,7 +86,8 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
         List<StoreListing> marketPriceStoreList = new ArrayList<>();
         final String baseUrl = storeBaseUrl();
         final StorePageSelectors pageSelectors = selectors();
-        final StoreName storeName = store();
+        final StoreName store = store();
+        final Function<String, LineUp> lineUpResolver = this::determineLineUp;
         final Function<String, Currency> currencyResolver = this::determineCurrency;
         final Function<String, ListingStatus> listingStatusResolver = this::calculateListingStatus;
 
@@ -92,14 +106,19 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
             Elements figurineItems = doc.select(pageSelectors.listingContainer());
             log.info("Found {} figurine items on page {}", figurineItems.size(), pageCount);
 
-            figurineItems.forEach(element -> marketPriceStoreList.add(crawlerMapper
-                    .toStoreListing(parseListing(element), storeName, currencyResolver, listingStatusResolver)));
+            figurineItems.forEach(item -> {
+                RawStoreListing rawStoreListing = parseListing(item);
+                rawStoreListing.setRawName(normalizeName(rawStoreListing.getRawName()));
+                StoreListing storeListing = crawlerMapper.toStoreListing(rawStoreListing, store, lineUpResolver,
+                        currencyResolver, listingStatusResolver);
+                marketPriceStoreList.add(storeListing);
+            });
 
             url = getNextPageUrl(doc, pageSelectors, baseUrl);
         }
 
-        log.info("Finished retrieving store listing info for {}. Total pages: {}, Total items: {}", storeName,
-                pageCount, marketPriceStoreList.size());
+        log.info("Finished retrieving store listing info for {}. Total pages: {}, Total items: {}", store, pageCount,
+                marketPriceStoreList.size());
 
         return marketPriceStoreList;
     }
@@ -159,6 +178,18 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
     protected abstract StorePageSelectors selectors();
 
     /**
+     * Determines the product lineup associated with the specified listing.
+     * <p>
+     * Implementations should inspect the normalized product name and return the
+     * corresponding {@link LineUp} value.
+     *
+     * @param nameText
+     *            the normalized product name
+     * @return the resolved product lineup
+     */
+    protected abstract LineUp determineLineUp(String nameText);
+
+    /**
      * Determines the currency associated with a listing.
      * <p>
      * Implementations may infer the currency from the raw price text or return a
@@ -180,6 +211,45 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
      *         determined
      */
     protected abstract ListingStatus calculateListingStatus(String availabilityText);
+
+    /**
+     * Normalizes a product name before it is mapped to a domain object.
+     * <p>
+     * This implementation removes common words that are not useful for identifying
+     * a figurine, such as manufacturer or region names, and then delegates to
+     * {@link #removeUnnecessaryWords(String)} so subclasses can perform
+     * store-specific normalization.
+     *
+     * @param nameText
+     *            the raw product name extracted from the store
+     * @return the normalized product name
+     */
+    protected String normalizeName(final String nameText) {
+        StringBuilder sb = new StringBuilder();
+        for (String token : nameText.toLowerCase().split("\\s+")) {
+            if (KEYWORDS_TO_REMOVE.contains(token)) {
+                continue;
+            }
+            sb.append(token).append(" ");
+        }
+
+        return removeUnnecessaryWords(sb.toString().trim());
+    }
+
+    /**
+     * Performs store-specific normalization of a product name.
+     * <p>
+     * Subclasses may override this method to remove or replace words that are
+     * unique to a particular store's naming conventions. The default implementation
+     * returns the supplied value unchanged.
+     *
+     * @param nameText
+     *            the partially normalized product name
+     * @return the normalized product name
+     */
+    protected String removeUnnecessaryWords(String nameText) {
+        return nameText;
+    }
 
     /**
      * Resolves the URL of the next listing page.
