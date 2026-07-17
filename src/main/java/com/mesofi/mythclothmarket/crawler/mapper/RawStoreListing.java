@@ -9,9 +9,10 @@ import lombok.Setter;
 @Getter
 @Setter
 public class RawStoreListing {
-    private String figurineRawName;
+    private String rawName;
+    private String imageUrl;
+    private String url;
     private String price;
     private String discount;
-    private String link;
     private String availability;
 }

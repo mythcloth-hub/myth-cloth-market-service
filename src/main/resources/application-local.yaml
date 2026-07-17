@@ -15,3 +15,9 @@ myth-cloth-market-service:
         name: "Luna Park Crawler"
         cron: "0 0 12 * * ?"   # Every day at noon
         enabled: false
+
+      - key: "MY_KOMBINI"
+        name: "My Kombin Crawler"
+        cron: "0 0 11 * * ?"   # Every day at 11 AM
+        enabled: false
+

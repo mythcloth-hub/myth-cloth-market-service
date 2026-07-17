@@ -1,18 +1,16 @@
 package com.mesofi.mythclothmarket.crawler.impl;
 
 import java.util.Currency;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.jsoup.nodes.Element;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import com.mesofi.mythclothmarket.crawler.AbstractPaginatedStoreCrawler;
 import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
 import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper;
-import com.mesofi.mythclothmarket.crawler.mapper.RawStoreListing;
+import com.mesofi.mythclothmarket.crawler.model.ElementSelector;
 import com.mesofi.mythclothmarket.crawler.model.ListingStatus;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
 import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
@@ -57,40 +55,7 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
     }
 
     /**
-     * Extracts the raw product information from a Nin-Nin-Game listing card.
-     * <p>
-     * The returned {@link RawStoreListing} contains the values exactly as they
-     * appear on the HTML page. These values are subsequently normalized into the
-     * domain model by the shared crawler infrastructure.
-     *
-     * @param element
-     *            the HTML element representing a single product listing
-     * @return the extracted raw listing information
-     */
-    @Override
-    public RawStoreListing parseListing(Element element) {
-        RawStoreListing priceStore = new RawStoreListing();
-
-        Optional.ofNullable(element.selectFirst(selectors().productName())).ifPresent(linkElement -> {
-            priceStore.setFigurineRawName(linkElement.attr("title"));
-            priceStore.setLink(linkElement.attr("href"));
-        });
-
-        Optional.ofNullable(element.selectFirst(selectors().priceContainer())).ifPresent(priceContainerElement -> {
-            Optional.ofNullable(priceContainerElement.selectFirst(selectors().price()))
-                    .ifPresent(price -> priceStore.setPrice(price.text()));
-            Optional.ofNullable(priceContainerElement.selectFirst(selectors().discount()))
-                    .ifPresent(discount -> priceStore.setDiscount(discount.text()));
-        });
-
-        Optional.ofNullable(element.selectFirst(selectors().availability()))
-                .ifPresent(availabilityElement -> priceStore.setAvailability(availabilityElement.text()));
-
-        return priceStore;
-    }
-
-    /**
-     * @return Nin-Nin-Game base URL.
+     * {@inheritDoc}
      */
     @Override
     public String storeBaseUrl() {
@@ -98,7 +63,7 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
     }
 
     /**
-     * @return category path used as the initial listing page.
+     * {@inheritDoc}
      */
     @Override
     public String getInitialSearchUrl() {
@@ -106,7 +71,7 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
     }
 
     /**
-     * @return crawl page limit for Nin-Nin-Game.
+     * {@inheritDoc}
      */
     @Override
     public int getMaxPages() {
@@ -114,13 +79,16 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
     }
 
     /**
-     * @return selectors for listing cards, prices, availability, and pagination.
+     * {@inheritDoc}
      */
     @Override
     public StorePageSelectors selectors() {
         return new StorePageSelectors(".general_block_card.ajax_block_product.item", "#pagination_next_bottom a",
-                "a.product-name", "div.price_container", "span.price", "span.pill.orange",
-                "div.actions > button, div.actions > span");
+                new ElementSelector("a.product-name", "title"),
+                new ElementSelector("div.product_image > a > img", "src"),
+                new ElementSelector("div.product_image > a", "href"), new ElementSelector("span.price"),
+                new ElementSelector("span.pill.orange"),
+                new ElementSelector("div.actions > button, div.actions > span"));
     }
 
     /**

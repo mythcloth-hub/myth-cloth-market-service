@@ -3,6 +3,7 @@ package com.mesofi.mythclothmarket.crawler;
 import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 import org.jsoup.Jsoup;
@@ -15,13 +16,24 @@ import org.slf4j.LoggerFactory;
 import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
 import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper;
 import com.mesofi.mythclothmarket.crawler.mapper.RawStoreListing;
+import com.mesofi.mythclothmarket.crawler.model.ElementSelector;
 import com.mesofi.mythclothmarket.crawler.model.ListingStatus;
 import com.mesofi.mythclothmarket.crawler.model.StoreListing;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
 import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
 
 /**
- * Base crawler for stores that expose listings across paginated HTML pages.
+ * Base implementation of {@link StoreCrawler} for online stores that expose
+ * product listings across paginated HTML pages.
+ * <p>
+ * This class encapsulates the common crawling workflow, including retrieving
+ * HTML pages, traversing pagination, extracting raw listing data using
+ * store-specific selectors, and converting the extracted information into
+ * normalized {@link StoreListing} instances.
+ * <p>
+ * Concrete subclasses are responsible only for providing store-specific
+ * configuration such as the base URL, CSS selectors, currency resolution, and
+ * listing status mapping.
  */
 public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
 
@@ -31,10 +43,13 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
     private final CrawlerMapper crawlerMapper;
 
     /**
+     * Creates a paginated store crawler.
+     *
      * @param pageFetcher
-     *            strategy used to retrieve page HTML.
+     *            the component responsible for retrieving HTML pages
      * @param mapper
-     *            mapper that converts raw scraped values to normalized listings.
+     *            the mapper that converts raw scraped values into normalized
+     *            {@link StoreListing} instances
      */
     protected AbstractPaginatedStoreCrawler(PageFetcher pageFetcher, CrawlerMapper mapper) {
         this.pageFetcher = pageFetcher;
@@ -42,13 +57,15 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
     }
 
     /**
-     * Crawls all pages up to {@link #getMaxPages()} and maps each raw listing to
-     * the normalized domain model.
+     * Crawls all configured listing pages for the target store.
      * <p>
-     * Store metadata (base URL, selectors, store name and status resolver) is
-     * resolved once per crawl to avoid repeated allocations in the item loop.
+     * Starting from the initial search URL, this method retrieves each page,
+     * extracts every product listing, converts the raw scraped values into
+     * normalized {@link StoreListing} instances, and continues following the
+     * pagination links until no additional pages are available or the configured
+     * page limit is reached.
      *
-     * @return normalized listings collected from the target store.
+     * @return the list of normalized store listings retrieved from the target store
      */
     @Override
     public List<StoreListing> crawlListings() {
@@ -71,7 +88,7 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
             }
 
             Document doc = Jsoup.parse(html);
-            Elements figurineItems = doc.select(pageSelectors.item());
+            Elements figurineItems = doc.select(pageSelectors.listingContainer());
             log.info("Found {} figurine items on page {}", figurineItems.size(), pageCount);
 
             figurineItems.forEach(element -> marketPriceStoreList.add(crawlerMapper
@@ -87,13 +104,72 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
     }
 
     /**
-     * Parses a listing container element into a raw listing object.
+     * Extracts the raw values from a single listing element.
+     * <p>
+     * The extraction process is driven entirely by the configured
+     * {@link StorePageSelectors}. The returned {@link RawStoreListing} contains the
+     * values exactly as they appear on the page, leaving normalization to the
+     * mapping layer.
      *
      * @param element
-     *            listing container from the store page.
-     * @return raw extracted listing fields.
+     *            the HTML element representing a single product listing
+     * @return the extracted raw listing information
      */
-    protected abstract RawStoreListing parseListing(Element element);
+    protected RawStoreListing parseListing(Element element) {
+        RawStoreListing priceStore = new RawStoreListing();
+
+        // rawName
+        ElementSelector productNameSelector = selectors().productName();
+        Optional.ofNullable(element.selectFirst(productNameSelector.selector()))
+                .ifPresent(e -> priceStore.setRawName(findElementValue(productNameSelector, e)));
+
+        // imageUrl
+        ElementSelector productImageSelector = selectors().productImage();
+        Optional.ofNullable(element.selectFirst(productImageSelector.selector()))
+                .ifPresent(e -> priceStore.setImageUrl(findElementValue(productImageSelector, e)));
+
+        // url
+        ElementSelector productUrlSelector = selectors().productUrl();
+        Optional.ofNullable(element.selectFirst(productUrlSelector.selector()))
+                .ifPresent(e -> priceStore.setUrl(findElementValue(productUrlSelector, e)));
+
+        // price
+        ElementSelector productPriceSelector = selectors().productPrice();
+        Optional.ofNullable(element.selectFirst(productPriceSelector.selector()))
+                .ifPresent(e -> priceStore.setPrice(findElementValue(productPriceSelector, e)));
+
+        // discount
+        ElementSelector discountSelector = selectors().discount();
+        Optional.ofNullable(discountSelector)
+                .flatMap(eSelector -> Optional.ofNullable(element.selectFirst(eSelector.selector())))
+                .ifPresent(e -> priceStore.setDiscount(findElementValue(discountSelector, e)));
+
+        // availability
+        ElementSelector availabilitySelector = selectors().availability();
+        Optional.ofNullable(availabilitySelector)
+                .flatMap(eSelector -> Optional.ofNullable(element.selectFirst(eSelector.selector())))
+                .ifPresent(e -> priceStore.setAvailability(findElementValue(availabilitySelector, e)));
+
+        return priceStore;
+    }
+
+    /**
+     * Extracts the value represented by the given selector.
+     * <p>
+     * If the selector specifies an attribute, the corresponding attribute value is
+     * returned. Otherwise, the element's visible text content is returned.
+     *
+     * @param elementSelector
+     *            the selector describing how to extract the value
+     * @param theElement
+     *            the matched HTML element
+     * @return the extracted and trimmed value
+     */
+    private String findElementValue(ElementSelector elementSelector, Element theElement) {
+        return elementSelector.attribute() == null
+                ? theElement.text().trim()
+                : theElement.attr(elementSelector.attribute()).trim();
+    }
 
     /**
      * @return absolute base URL for the target store.
@@ -106,43 +182,53 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
     protected abstract String getInitialSearchUrl();
 
     /**
-     * @return maximum number of pages to crawl.
+     * Returns the maximum number of listing pages that should be crawled.
+     *
+     * @return the maximum number of pages to visit
      */
     protected abstract int getMaxPages();
 
     /**
-     * @return CSS selectors used by this crawler implementation.
+     * Returns the CSS selectors required to extract listing information from the
+     * target store.
+     *
+     * @return the configured page selectors
      */
     protected abstract StorePageSelectors selectors();
 
     /**
-     * Maps raw price text to a normalized currency.
+     * Determines the currency associated with a listing.
+     * <p>
+     * Implementations may infer the currency from the raw price text or return a
+     * fixed currency for stores that always use the same one.
      *
      * @param priceText
-     *            raw price text extracted from the store page.
-     * @return normalized currency.
+     *            the raw price text extracted from the listing
+     * @return the resolved currency, or {@code null} if it cannot be determined
      */
     protected abstract Currency determineCurrency(String priceText);
 
     /**
-     * Maps raw availability text to a normalized listing status.
+     * Converts the store-specific availability information into a normalized
+     * {@link ListingStatus}.
      *
      * @param availabilityText
-     *            availability text extracted from the store page.
-     * @return normalized listing status.
+     *            the raw availability text extracted from the listing
+     * @return the corresponding listing status, or {@code null} if it cannot be
+     *         determined
      */
     protected abstract ListingStatus calculateListingStatus(String availabilityText);
 
     /**
-     * Resolves the URL for the next page based on the configured selector.
+     * Resolves the URL of the next listing page.
      *
      * @param doc
-     *            parsed document for the current page.
+     *            the parsed HTML document of the current page
      * @param pageSelectors
-     *            selectors configured for the current crawler implementation.
+     *            the selectors configured for the current store
      * @param baseUrl
-     *            absolute store base URL used to resolve relative next-page links.
-     * @return next page URL, or {@code null} if no next page is available.
+     *            the store's base URL used to resolve relative links
+     * @return the next page URL, or {@code null} if no additional page exists
      */
     private String getNextPageUrl(Document doc, StorePageSelectors pageSelectors, String baseUrl) {
         Element nextPageLink = doc.selectFirst(pageSelectors.nextPage());

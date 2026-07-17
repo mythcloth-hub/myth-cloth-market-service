@@ -24,7 +24,7 @@ public interface CrawlerMapper {
 
     // Pre-compile the regex pattern once to improve parsing performance
     // significantly
-    Pattern PRICE_PATTERN = Pattern.compile("[0-9.,]+");
+    Pattern PRICE_PATTERN = Pattern.compile("[0-9., ]+");
     Pattern DISCOUNT_PATTERN = Pattern.compile("\\d+");
 
     /**
@@ -39,13 +39,14 @@ public interface CrawlerMapper {
      * @return normalized {@link StoreListing} instance.
      */
     @Mapping(target = "store", expression = "java(storeName)")
-    @Mapping(target = "productName", source = "figurineRawName")
+    @Mapping(target = "productName", source = "rawName")
     @Mapping(target = "lineUp", ignore = true)
     @Mapping(target = "price", source = "price", qualifiedByName = "parsePrice")
     @Mapping(target = "discount", source = "discount", qualifiedByName = "parseDiscount")
     @Mapping(target = "discountedPrice", source = "raw", qualifiedByName = "calculateDiscountedPrice")
     @Mapping(target = "currency", expression = "java(calculateCurrency.apply(raw.getPrice()))")
-    @Mapping(target = "productUrl", source = "link")
+    @Mapping(target = "productUrl", source = "url")
+    @Mapping(target = "productImageUrl", source = "imageUrl")
     @Mapping(target = "status", expression = "java(calculateListingStatus.apply(raw.getAvailability()))")
     @Mapping(target = "checkedAt", expression = "java(Instant.now())")
     StoreListing toStoreListing(RawStoreListing raw, @Context StoreName storeName,
@@ -69,7 +70,7 @@ public interface CrawlerMapper {
         if (matcher.find()) {
             try {
                 // Remove commas to prevent NumberFormatException
-                String cleanNumber = matcher.group().replace(",", "");
+                String cleanNumber = matcher.group().replace(",", "").replace(" ", "");
                 return new BigDecimal(cleanNumber);
             } catch (NumberFormatException e) {
                 // Protects your crawler from crashing if it encounters badly formed data (e.g.,

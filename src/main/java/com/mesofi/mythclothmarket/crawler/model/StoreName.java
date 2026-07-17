@@ -1,8 +1,26 @@
 package com.mesofi.mythclothmarket.crawler.model;
 
 /**
- * Supported external stores.
+ * Identifies the external stores supported by the market crawler.
+ * <p>
+ * Each enum constant represents a specific retailer for which a crawler
+ * implementation can retrieve product information such as pricing,
+ * availability, and product details.
  */
 public enum StoreName {
-    NIN_NIN_GAME, LUNA_PARK
+
+    /**
+     * Nin-Nin-Game online store.
+     */
+    NIN_NIN_GAME,
+
+    /**
+     * Luna Park online store.
+     */
+    LUNA_PARK,
+
+    /**
+     * My Kombini online store.
+     */
+    MY_KOMBINI
 }

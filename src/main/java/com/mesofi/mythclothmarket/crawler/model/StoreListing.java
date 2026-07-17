@@ -29,5 +29,6 @@ import java.util.Currency;
  *            timestamp when the listing was crawled.
  */
 public record StoreListing(StoreName store, String productName, String lineUp, BigDecimal price, BigDecimal discount,
-        BigDecimal discountedPrice, Currency currency, String productUrl, ListingStatus status, Instant checkedAt) {
+        BigDecimal discountedPrice, Currency currency, String productUrl, String productImageUrl, ListingStatus status,
+        Instant checkedAt) {
 }
