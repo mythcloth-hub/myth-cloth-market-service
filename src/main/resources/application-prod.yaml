@@ -8,15 +8,15 @@ myth-cloth-market-service:
     jobs:
       - key: "NIN_NIN_GAME"
         name: "Nin Nin Game Crawler"
-        cron: ${NIN_NIN_GAME_CRON:0 0 12 * * ?}
+        cron: ${NIN_NIN_GAME_CRON:0 0 10 * * ?}
         enabled: true
 
       - key: "LUNA_PARK"
         name: "Luna Park Crawler"
-        cron: ${LUNA_PARK_CRON:0 0 12 * * ?}
+        cron: ${LUNA_PARK_CRON:0 0 11 * * ?}
         enabled: true
 
       - key: "MY_KOMBINI"
         name: "My Kombini Crawler"
-        cron: ${MY_KOMBINI_CRON:0 0 11 * * ?}
-        enabled: false
+        cron: ${MY_KOMBINI_CRON:0 0 12 * * ?}
+        enabled: true
