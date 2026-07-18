@@ -91,10 +91,21 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
                 new ElementSelector("span.pill.orange"),
                 new ElementSelector("div.actions > button, div.actions > span"));
     }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public LineUp determineLineUp(String nameText) {
+        if (nameText.contains("ex")) {
+            return LineUp.MYTH_CLOTH_EX;
+        }
+        if (nameText.contains("appendix")) {
+            return LineUp.APPENDIX;
+        }
         return LineUp.MYTH_CLOTH;
     }
+
     /**
      * Determines the currency of a listing by inspecting the currency prefix
      * contained in the raw price text.

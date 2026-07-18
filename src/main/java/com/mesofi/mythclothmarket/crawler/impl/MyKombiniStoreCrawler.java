@@ -84,10 +84,18 @@ public class MyKombiniStoreCrawler extends AbstractPaginatedStoreCrawler {
                 new ElementSelector("a.product_img_link", "href"), new ElementSelector("span.price"), null,
                 new ElementSelector("a.exclusive.ajax_add_to_cart_button"));
     }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public LineUp determineLineUp(String nameText) {
+        if (nameText.contains("ex")) {
+            return LineUp.MYTH_CLOTH_EX;
+        }
         return LineUp.MYTH_CLOTH;
     }
+
     /**
      * Determines the currency used by MyKombini listings.
      * <p>

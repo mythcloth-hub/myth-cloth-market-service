@@ -51,6 +51,9 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
         KEYWORDS_TO_REMOVE.add("japan");
         KEYWORDS_TO_REMOVE.add("saint");
         KEYWORDS_TO_REMOVE.add("version");
+        KEYWORDS_TO_REMOVE.add("myth");
+        KEYWORDS_TO_REMOVE.add("-");
+        KEYWORDS_TO_REMOVE.add(":");
     }
 
     private final PageFetcher pageFetcher;
