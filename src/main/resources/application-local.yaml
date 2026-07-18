@@ -21,3 +21,8 @@ myth-cloth-market-service:
         cron: "0 0 11 * * ?"   # Every day at 11 AM
         enabled: false
 
+spring:
+  rabbitmq:
+    host: localhost
+    username: mythcloth
+    password: mythcloth

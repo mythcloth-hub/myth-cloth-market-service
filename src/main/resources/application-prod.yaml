@@ -20,3 +20,9 @@ myth-cloth-market-service:
         name: "My Kombini Crawler"
         cron: ${MY_KOMBINI_CRON:0 0 12 * * ?}
         enabled: true
+
+spring:
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}

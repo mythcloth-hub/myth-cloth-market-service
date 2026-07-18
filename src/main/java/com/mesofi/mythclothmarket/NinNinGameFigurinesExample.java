@@ -1,4 +1,4 @@
-package com.mesofi.mythclothmarket.example;
+package com.mesofi.mythclothmarket;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -27,7 +27,7 @@ public class NinNinGameFigurinesExample {
      * @param args
      *            unused command-line arguments.
      */
-    public static void main(String[] args) {
+    static void main(String[] args) {
 
         System.out.println("Initializing Playwright with Nin-Nin-Game");
 

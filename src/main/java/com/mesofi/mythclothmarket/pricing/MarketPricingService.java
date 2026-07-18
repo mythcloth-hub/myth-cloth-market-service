@@ -6,7 +6,9 @@ import org.springframework.stereotype.Service;
 
 import com.mesofi.mythclothmarket.crawler.StoreCrawler;
 import com.mesofi.mythclothmarket.crawler.model.StoreListing;
+import com.mesofi.mythclothmarket.messaging.MessagePublisher;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -20,7 +22,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class MarketPricingService {
+
+    private final MessagePublisher messagePublisher;
 
     /**
      * Retrieves the latest product listings from the specified store and publishes
@@ -40,7 +45,7 @@ public class MarketPricingService {
         List<StoreListing> storeListings = storeCrawler.crawlListings();
         for (StoreListing storeListing : storeListings) {
             // publishes each listing to the message broker ...
-            log.info("Publishing listing: {}", storeListing);
+            messagePublisher.publishCrawlerMessage(storeListing);
         }
 
         log.info("{} figurines were published", storeListings.size());

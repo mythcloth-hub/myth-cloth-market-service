@@ -6,6 +6,8 @@ package com.mesofi.mythclothmarket.crawler.fetcher;
  */
 public class BlockedPageException extends RuntimeException {
 
+    private static final long serialVersionUID = -1867676152308300900L;
+
     public BlockedPageException(String message) {
         super(message);
     }
