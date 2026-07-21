@@ -2,7 +2,6 @@ package com.mesofi.mythclothmarket.crawler;
 
 import java.util.ArrayList;
 import java.util.Currency;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -21,6 +20,7 @@ import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper;
 import com.mesofi.mythclothmarket.crawler.mapper.RawStoreListing;
 import com.mesofi.mythclothmarket.crawler.model.ElementSelector;
 import com.mesofi.mythclothmarket.crawler.model.LineUp;
+import com.mesofi.mythclothmarket.crawler.model.LineUpDetection;
 import com.mesofi.mythclothmarket.crawler.model.ListingStatus;
 import com.mesofi.mythclothmarket.crawler.model.StoreListing;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
@@ -44,17 +44,8 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractPaginatedStoreCrawler.class);
 
-    private static final Set<String> KEYWORDS_TO_REMOVE = new HashSet<>();
-
-    static {
-        KEYWORDS_TO_REMOVE.add("bandai");
-        KEYWORDS_TO_REMOVE.add("japan");
-        KEYWORDS_TO_REMOVE.add("saint");
-        KEYWORDS_TO_REMOVE.add("version");
-        KEYWORDS_TO_REMOVE.add("myth");
-        KEYWORDS_TO_REMOVE.add("-");
-        KEYWORDS_TO_REMOVE.add(":");
-    }
+    // Add unnecessary words to remove for all the stores.
+    private static final Set<String> KEYWORDS_TO_REMOVE = Set.of("");
 
     private final PageFetcher pageFetcher;
     private final CrawlerMapper crawlerMapper;
@@ -90,7 +81,6 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
         final String baseUrl = storeBaseUrl();
         final StorePageSelectors pageSelectors = selectors();
         final StoreName store = store();
-        final Function<String, LineUp> lineUpResolver = this::determineLineUp;
         final Function<String, Currency> currencyResolver = this::determineCurrency;
         final Function<String, ListingStatus> listingStatusResolver = this::calculateListingStatus;
 
@@ -112,7 +102,11 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
             figurineItems.forEach(item -> {
                 RawStoreListing rawStoreListing = parseListing(item);
                 rawStoreListing.setRawName(normalizeName(rawStoreListing.getRawName()));
-                StoreListing storeListing = crawlerMapper.toStoreListing(rawStoreListing, store, lineUpResolver,
+                // Try to determine the lineup from the existing name to narrow the search.
+                LineUpDetection lineUp = determineLineUp(rawStoreListing.getRawName());
+                rawStoreListing.setRawName(lineUp.normalizedName());
+
+                StoreListing storeListing = crawlerMapper.toStoreListing(rawStoreListing, store, lineUp.lineUp(),
                         currencyResolver, listingStatusResolver);
                 marketPriceStoreList.add(storeListing);
             });
@@ -181,16 +175,18 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
     protected abstract StorePageSelectors selectors();
 
     /**
-     * Determines the product lineup associated with the specified listing.
+     * Extracts lineup information from the specified product name.
      * <p>
-     * Implementations should inspect the normalized product name and return the
-     * corresponding {@link LineUp} value.
+     * Implementations should apply any store-specific naming conventions to
+     * determine the corresponding {@link LineUp} and return a
+     * {@link LineUpDetection} containing both the detected lineup and the
+     * normalized product name with any lineup prefix removed.
      *
      * @param nameText
-     *            the normalized product name
-     * @return the resolved product lineup
+     *            the raw product name to analyze
+     * @return the result containing the detected lineup and normalized product name
      */
-    protected abstract LineUp determineLineUp(String nameText);
+    protected abstract LineUpDetection determineLineUp(String nameText);
 
     /**
      * Determines the currency associated with a listing.

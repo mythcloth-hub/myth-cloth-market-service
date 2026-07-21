@@ -9,7 +9,7 @@ import com.mesofi.mythclothmarket.crawler.AbstractPaginatedStoreCrawler;
 import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
 import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper;
 import com.mesofi.mythclothmarket.crawler.model.ElementSelector;
-import com.mesofi.mythclothmarket.crawler.model.LineUp;
+import com.mesofi.mythclothmarket.crawler.model.LineUpDetection;
 import com.mesofi.mythclothmarket.crawler.model.ListingStatus;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
 import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
@@ -89,11 +89,12 @@ public class MyKombiniStoreCrawler extends AbstractPaginatedStoreCrawler {
      * {@inheritDoc}
      */
     @Override
-    public LineUp determineLineUp(String nameText) {
-        if (nameText.contains("ex")) {
-            return LineUp.MYTH_CLOTH_EX;
-        }
-        return LineUp.MYTH_CLOTH;
+    public LineUpDetection determineLineUp(String nameText) {
+        /*
+         * if (nameText.contains("ex")) { return LineUp.MYTH_CLOTH_EX; } return
+         * LineUp.MYTH_CLOTH;
+         */
+        return null;
     }
 
     /**

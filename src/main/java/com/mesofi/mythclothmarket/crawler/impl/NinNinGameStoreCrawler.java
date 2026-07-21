@@ -1,8 +1,11 @@
 package com.mesofi.mythclothmarket.crawler.impl;
 
+import java.util.Arrays;
 import java.util.Currency;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -12,6 +15,7 @@ import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
 import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper;
 import com.mesofi.mythclothmarket.crawler.model.ElementSelector;
 import com.mesofi.mythclothmarket.crawler.model.LineUp;
+import com.mesofi.mythclothmarket.crawler.model.LineUpDetection;
 import com.mesofi.mythclothmarket.crawler.model.ListingStatus;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
 import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
@@ -33,6 +37,61 @@ import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
 public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
 
     private static final Pattern CURRENCY_PREFIX_PATTERN = Pattern.compile("^[A-Za-z]+");
+
+    /**
+     * Ordered collection of lineup matchers used to identify the lineup from the
+     * prefix of a Nin-Nin-Game product name.
+     * <p>
+     * The order of the matchers is significant. More specific aliases should appear
+     * before more general ones to ensure the correct lineup is detected.
+     */
+    private static final List<LineUpMatcher> LINE_UP_MATCHERS = List.of(
+            new LineUpMatcher(LineUp.MYTH_CLOTH_EX, compileAliases("myth cloth ex", "saint cloth myth ex")),
+            new LineUpMatcher(LineUp.MYTH_CLOTH,
+                    compileAliases("myth cloth", "saint cloth myth", "saint seiya cloth myth")),
+            new LineUpMatcher(LineUp.APPENDIX, compileAliases("appendix")),
+            new LineUpMatcher(LineUp.SAINT_CLOTH_LEGEND, compileAliases("myth cloth legend")),
+            new LineUpMatcher(LineUp.CROWN, compileAliases("crown cloth")));
+
+    /**
+     * Associates a {@link LineUp} with the compiled pattern used to recognize it in
+     * a Nin-Nin-Game product name prefix.
+     *
+     * @param lineUp
+     *            the lineup represented by this matcher
+     * @param pattern
+     *            the compiled pattern used to identify the lineup
+     */
+    private record LineUpMatcher(LineUp lineUp, Pattern pattern) {
+
+        /**
+         * Determines whether the specified text matches this lineup.
+         *
+         * @param text
+         *            the product name prefix to test
+         * @return {@code true} if the text matches this lineup; {@code false} otherwise
+         */
+        boolean matches(String text) {
+            return pattern.matcher(text).find();
+        }
+    }
+
+    /**
+     * Compiles a case-insensitive pattern that matches any of the specified lineup
+     * aliases as complete words.
+     * <p>
+     * Each alias is escaped using {@link Pattern#quote(String)} so that it is
+     * treated as a literal value rather than a regular expression.
+     *
+     * @param aliases
+     *            the aliases that identify a lineup
+     * @return a compiled pattern matching any of the supplied aliases
+     */
+    private static Pattern compileAliases(String... aliases) {
+        return Pattern.compile(
+                "\\b(?:" + Arrays.stream(aliases).map(Pattern::quote).collect(Collectors.joining("|")) + ")\\b",
+                Pattern.CASE_INSENSITIVE);
+    }
 
     /**
      * Creates a crawler for the Nin-Nin-Game storefront.
@@ -96,14 +155,22 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
      * {@inheritDoc}
      */
     @Override
-    public LineUp determineLineUp(String nameText) {
-        if (nameText.contains("ex")) {
-            return LineUp.MYTH_CLOTH_EX;
+    public LineUpDetection determineLineUp(String nameText) {
+        int separator = nameText.indexOf('-');
+        if (separator < 0) {
+            return new LineUpDetection(null, nameText);
         }
-        if (nameText.contains("appendix")) {
-            return LineUp.APPENDIX;
+
+        String prefix = nameText.substring(0, separator).trim();
+        String normalizedName = nameText.substring(separator + 1).trim();
+
+        for (LineUpMatcher matcher : LINE_UP_MATCHERS) {
+            if (matcher.matches(prefix)) {
+                return new LineUpDetection(matcher.lineUp(), normalizedName);
+            }
         }
-        return LineUp.MYTH_CLOTH;
+
+        return new LineUpDetection(null, normalizedName);
     }
 
     /**
