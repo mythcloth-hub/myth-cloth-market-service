@@ -24,14 +24,15 @@ import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
  * {@link com.mesofi.mythclothmarket.crawler.StoreCrawler} implementation for
  * the Nin-Nin-Game online store.
  * <p>
- * This crawler navigates the paginated Myth Cloth product listings published by
- * Nin-Nin-Game, extracts the raw product information from each listing, and
- * delegates the normalization of the scraped values to the shared crawler
- * infrastructure.
+ * This crawler traverses the paginated Myth Cloth catalog, extracts the raw
+ * listing information, and delegates the normalization of scraped values to the
+ * shared crawler infrastructure.
  * <p>
- * In addition to extracting product details, this implementation translates
- * Nin-Nin-Game specific currency prefixes and availability labels into the
- * application's normalized domain model.
+ * Besides translating Nin-Nin-Game specific currencies and availability labels,
+ * this implementation contains custom logic for detecting a product's
+ * {@link LineUp}. Product titles are not consistently formatted, so the crawler
+ * supports multiple separator styles and also recognizes lineup aliases that
+ * appear directly at the beginning of a product name.
  */
 @Component
 public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
@@ -51,7 +52,8 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
                     compileAliases("myth cloth", "saint cloth myth", "saint seiya cloth myth")),
             new LineUpMatcher(LineUp.APPENDIX, compileAliases("appendix")),
             new LineUpMatcher(LineUp.SAINT_CLOTH_LEGEND, compileAliases("myth cloth legend")),
-            new LineUpMatcher(LineUp.CROWN, compileAliases("crown cloth")));
+            new LineUpMatcher(LineUp.CROWN, compileAliases("crown cloth")),
+            new LineUpMatcher(LineUp.DD_PANORAMATION, compileAliases("d.d.panoramation")));
 
     /**
      * Associates a {@link LineUp} with the compiled pattern used to recognize it in
@@ -74,14 +76,33 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
         boolean matches(String text) {
             return pattern.matcher(text).find();
         }
+
+        /**
+         * Removes the matched lineup prefix from the supplied product name and returns
+         * the remaining character or product name.
+         *
+         * @param text
+         *            the complete product name
+         * @return the product name without the lineup prefix, or {@code null} if this
+         *         matcher does not recognize the supplied text
+         */
+        String extractProductName(String text) {
+            Matcher matcher = pattern.matcher(text);
+            if (matcher.find()) {
+                return text.substring(matcher.end()).trim();
+            }
+            return null;
+        }
     }
 
     /**
-     * Compiles a case-insensitive pattern that matches any of the specified lineup
+     * Compiles a case-insensitive pattern that matches any of the supplied lineup
      * aliases as complete words.
      * <p>
-     * Each alias is escaped using {@link Pattern#quote(String)} so that it is
-     * treated as a literal value rather than a regular expression.
+     * Each alias is escaped using {@link Pattern#quote(String)} so that special
+     * regular expression characters are treated literally. Word boundaries are
+     * added to prevent partial matches (for example, matching {@code EX} inside a
+     * longer word).
      *
      * @param aliases
      *            the aliases that identify a lineup
@@ -92,6 +113,17 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
                 "\\b(?:" + Arrays.stream(aliases).map(Pattern::quote).collect(Collectors.joining("|")) + ")\\b",
                 Pattern.CASE_INSENSITIVE);
     }
+
+    /**
+     * Characters that separate the lineup portion from the character name in a
+     * Nin-Nin-Game product title.
+     * <p>
+     * The separators are evaluated in declaration order. If none of the explicit
+     * separators are found, the special {@code '\0'} marker instructs the detection
+     * algorithm to attempt extracting the lineup directly from the beginning of the
+     * product name.
+     */
+    private static final List<Character> TOKEN_SEPARATORS = List.of('-', ':');
 
     /**
      * Creates a crawler for the Nin-Nin-Game storefront.
@@ -153,24 +185,61 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
 
     /**
      * {@inheritDoc}
+     * <p>
+     * Nin-Nin-Game does not use a single naming convention for its products.
+     * Depending on the listing, the lineup may appear as:
+     * <ul>
+     * <li>a prefix separated by a dash, for example
+     * {@code Myth Cloth EX - Gemini Saga};</li>
+     * <li>a prefix separated by a colon, for example
+     * {@code Myth Cloth EX: Gemini Saga}; or</li>
+     * <li>the beginning of the product name without any explicit separator, for
+     * example {@code Myth Cloth EX Gemini Saga}.</li>
+     * </ul>
+     * <p>
+     * This implementation first attempts to split the title using the configured
+     * separator characters. If no separator is found, it falls back to matching the
+     * lineup directly against the beginning of the product name and removes the
+     * matched prefix from the returned normalized name.
      */
     @Override
     public LineUpDetection determineLineUp(String nameText) {
-        int separator = nameText.indexOf('-');
-        if (separator < 0) {
-            return new LineUpDetection(null, nameText);
+        for (char token : TOKEN_SEPARATORS) {
+            int separator = nameText.indexOf(token);
+            if (separator == -1) {
+                continue;
+            }
+
+            String prefix = nameText.substring(0, separator).trim();
+            String normalizedName = nameText.substring(separator + 1).trim();
+
+            for (LineUpMatcher matcher : LINE_UP_MATCHERS) {
+                if (matcher.matches(prefix)) {
+                    return new LineUpDetection(matcher.lineUp(), normalizedName);
+                }
+            }
+
+            return new LineUpDetection(null, normalizedName);
         }
 
-        String prefix = nameText.substring(0, separator).trim();
-        String normalizedName = nameText.substring(separator + 1).trim();
+        return determineLineUpWithoutSeparator(nameText);
+    }
 
+    /**
+     * Attempts to determine the lineup when the product title does not contain an
+     * explicit separator between the lineup and the character name.
+     *
+     * @param nameText
+     *            complete product title
+     * @return detected lineup and normalized name
+     */
+    private LineUpDetection determineLineUpWithoutSeparator(String nameText) {
         for (LineUpMatcher matcher : LINE_UP_MATCHERS) {
-            if (matcher.matches(prefix)) {
-                return new LineUpDetection(matcher.lineUp(), normalizedName);
+            if (matcher.matches(nameText)) {
+                return new LineUpDetection(matcher.lineUp(), matcher.extractProductName(nameText));
             }
         }
-
-        return new LineUpDetection(null, normalizedName);
+        return new LineUpDetection(null, nameText);
     }
 
     /**
