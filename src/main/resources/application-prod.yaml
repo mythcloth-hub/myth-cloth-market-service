@@ -11,6 +11,11 @@ myth-cloth-market-service:
         cron: ${NIN_NIN_GAME_CRON:0 0 10 * * ?}
         enabled: true
 
+      - key: "MANDARAKE"
+        name: "Mandarake Crawler"
+        cron: ${MANDARAKE_CRON:0 0 9 * * ?}
+        enabled: true
+
       - key: "LUNA_PARK"
         name: "Luna Park Crawler"
         cron: ${LUNA_PARK_CRON:0 0 11 * * ?}

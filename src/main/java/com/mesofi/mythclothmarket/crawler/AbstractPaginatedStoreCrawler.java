@@ -102,8 +102,13 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
             figurineItems.forEach(item -> {
                 RawStoreListing rawStoreListing = parseListing(item);
                 rawStoreListing.setRawName(normalizeName(rawStoreListing.getRawName()));
+
                 // Try to determine the lineup from the existing name to narrow the search.
                 LineUpDetection lineUp = determineLineUp(rawStoreListing.getRawName());
+                if (lineUp == null) {
+                    throw new IllegalStateException("Provide a valid LineUpDetection");
+                }
+
                 rawStoreListing.setRawName(lineUp.normalizedName());
 
                 StoreListing storeListing = crawlerMapper.toStoreListing(rawStoreListing, store, lineUp.lineUp(),
@@ -138,8 +143,10 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
 
         extractAndSet(element, selectors.productName(), priceStore::setRawName);
         extractAndSet(element, selectors.productImage(), priceStore::setImageUrl);
-        extractAndSet(element, selectors.productUrl(), priceStore::setUrl);
         extractAndSet(element, selectors.productPrice(), priceStore::setPrice);
+        extractAndSet(element, selectors.productUrl(), priceStore::setUrl);
+
+        priceStore.setUrl(includeStoreBaseUrl() ? storeBaseUrl() + priceStore.getUrl() : priceStore.getUrl());
 
         Optional.ofNullable(selectors.discount())
                 .ifPresent(selector -> extractAndSet(element, selector, priceStore::setDiscount));
@@ -248,6 +255,20 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
      */
     protected String removeUnnecessaryWords(String nameText) {
         return nameText;
+    }
+
+    /**
+     * Determines whether the store's base URL should be included in the listing
+     * URLs.
+     * <p>
+     * Subclasses may override this method to include the base URL for stores that
+     * require it. The default implementation returns {@code false}.
+     *
+     * @return {@code true} if the base URL should be included, {@code false}
+     *         otherwise
+     */
+    protected boolean includeStoreBaseUrl() {
+        return false;
     }
 
     /**

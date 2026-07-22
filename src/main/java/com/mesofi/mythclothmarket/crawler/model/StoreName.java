@@ -15,6 +15,11 @@ public enum StoreName {
     NIN_NIN_GAME,
 
     /**
+     * Mandarake online store.
+     */
+    MANDARAKE,
+
+    /**
      * Luna Park online store.
      */
     LUNA_PARK,
