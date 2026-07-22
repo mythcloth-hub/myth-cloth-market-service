@@ -160,7 +160,7 @@ public class MandarakeStoreCrawler extends AbstractPaginatedStoreCrawler {
      * {@inheritDoc}
      */
     @Override
-    protected boolean includeStoreBaseUrl() {
+    protected boolean prependedStoreBaseUrlInImageUrl() {
         return true;
     }
 

@@ -101,18 +101,25 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
 
             figurineItems.forEach(item -> {
                 RawStoreListing rawStoreListing = parseListing(item);
-                rawStoreListing.setRawName(normalizeName(rawStoreListing.getRawName()));
+
+                // Normalize extracted fields and adjust image URLs before mapping.
+                rawStoreListing.setNormalizedName(normalizeName(rawStoreListing.getOriginalName()));
+                if (prependedStoreBaseUrlInImageUrl()) {
+                    rawStoreListing.setImageUrl(storeBaseUrl() + rawStoreListing.getImageUrl());
+                }
+                rawStoreListing.setImageUrl(filterImageUrl(rawStoreListing.getImageUrl()));
 
                 // Try to determine the lineup from the existing name to narrow the search.
-                LineUpDetection lineUp = determineLineUp(rawStoreListing.getRawName());
+                LineUpDetection lineUp = determineLineUp(rawStoreListing.getNormalizedName());
                 if (lineUp == null) {
                     throw new IllegalStateException("Provide a valid LineUpDetection");
                 }
 
-                rawStoreListing.setRawName(lineUp.normalizedName());
+                rawStoreListing.setNormalizedName(lineUp.normalizedName());
 
                 StoreListing storeListing = crawlerMapper.toStoreListing(rawStoreListing, store, lineUp.lineUp(),
                         currencyResolver, listingStatusResolver);
+
                 marketPriceStoreList.add(storeListing);
             });
 
@@ -141,17 +148,16 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
         RawStoreListing priceStore = new RawStoreListing();
         StorePageSelectors selectors = selectors();
 
-        extractAndSet(element, selectors.productName(), priceStore::setRawName);
+        extractAndSet(element, selectors.productName(), priceStore::setOriginalName);
+        extractAndSet(element, selectors.productName(), priceStore::setNormalizedName);
         extractAndSet(element, selectors.productImage(), priceStore::setImageUrl);
-        extractAndSet(element, selectors.productPrice(), priceStore::setPrice);
-        extractAndSet(element, selectors.productUrl(), priceStore::setUrl);
-
-        priceStore.setUrl(includeStoreBaseUrl() ? storeBaseUrl() + priceStore.getUrl() : priceStore.getUrl());
+        extractAndSet(element, selectors.productUrl(), priceStore::setProductUrl);
+        extractAndSet(element, selectors.productPrice(), priceStore::setPriceText);
 
         Optional.ofNullable(selectors.discount())
-                .ifPresent(selector -> extractAndSet(element, selector, priceStore::setDiscount));
+                .ifPresent(selector -> extractAndSet(element, selector, priceStore::setDiscountText));
         Optional.ofNullable(selectors.availability())
-                .ifPresent(selector -> extractAndSet(element, selector, priceStore::setAvailability));
+                .ifPresent(selector -> extractAndSet(element, selector, priceStore::setAvailabilityText));
 
         return priceStore;
     }
@@ -258,16 +264,34 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
     }
 
     /**
-     * Determines whether the store's base URL should be included in the listing
-     * URLs.
+     * Performs store-specific filtering of an image URL.
      * <p>
-     * Subclasses may override this method to include the base URL for stores that
-     * require it. The default implementation returns {@code false}.
+     * Subclasses may override this method to modify or clean up image URLs
+     * according to the store's specific requirements. The default implementation
+     * returns the supplied value unchanged.
      *
-     * @return {@code true} if the base URL should be included, {@code false}
-     *         otherwise
+     * @param imageUrl
+     *            the raw image URL extracted from the store
+     * @return the filtered image URL
      */
-    protected boolean includeStoreBaseUrl() {
+    protected String filterImageUrl(String imageUrl) {
+        return imageUrl;
+    }
+
+    /**
+     * Determines whether the store's base URL should be prepended to extracted
+     * image URLs.
+     * <p>
+     * Some stores expose image URLs as relative paths, requiring the store's base
+     * URL to construct absolute image URLs. Subclasses may override this method to
+     * indicate that the base URL should be included. The default implementation
+     * returns {@code false}.
+     * </p>
+     *
+     * @return {@code true} if the store's base URL should be prepended to image
+     *         URLs; {@code false} otherwise
+     */
+    protected boolean prependedStoreBaseUrlInImageUrl() {
         return false;
     }
 

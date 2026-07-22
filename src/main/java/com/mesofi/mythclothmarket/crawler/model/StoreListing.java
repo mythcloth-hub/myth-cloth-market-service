@@ -8,27 +8,35 @@ import java.util.Currency;
  * Normalized store listing produced by the crawler pipeline.
  *
  * @param store
- *            source store.
- * @param productName
- *            product title.
+ *            the source store from which the listing was retrieved.
  * @param lineUp
- *            optional collection or series identifier.
- * @param price
- *            listed price.
- * @param discount
- *            discount percentage.
- * @param discountedPrice
- *            computed discounted price.
- * @param currency
- *            currency for the listing price.
+ *            the detected Myth Cloth line-up, or {@code null} if it could not
+ *            be determined.
+ * @param originalProductName
+ *            the original product name extracted from the store without
+ *            normalization.
+ * @param productName
+ *            the normalized product name used for matching and processing.
+ * @param productImageUrl
+ *            the URL of the product image.
  * @param productUrl
- *            product page URL.
+ *            the URL of the product page.
+ * @param price
+ *            the product price.
+ * @param discount
+ *            the discount percentage applied to the product, or {@code null} if
+ *            no discount is available.
+ * @param discountedPrice
+ *            the calculated discounted price, or {@code null} if no discount
+ *            applies.
+ * @param currency
+ *            the currency associated with the product price.
  * @param status
- *            normalized listing status.
+ *            the normalized availability status of the listing.
  * @param checkedAt
- *            timestamp when the listing was crawled.
+ *            the timestamp when the listing was crawled.
  */
-public record StoreListing(StoreName store, String productName, LineUp lineUp, BigDecimal price, BigDecimal discount,
-        BigDecimal discountedPrice, Currency currency, String productUrl, String productImageUrl, ListingStatus status,
-        Instant checkedAt) {
+public record StoreListing(StoreName store, LineUp lineUp, String originalProductName, String productName,
+        String productImageUrl, String productUrl, BigDecimal price, BigDecimal discount, BigDecimal discountedPrice,
+        Currency currency, ListingStatus status, Instant checkedAt) {
 }

@@ -170,4 +170,16 @@ public class LunaParkStoreCrawler extends AbstractPaginatedStoreCrawler {
     protected String removeUnnecessaryWords(String nameText) {
         return UNNECESSARY_WORDS_PATTERN.matcher(nameText).replaceAll("").replaceAll("\\s+", " ").trim();
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected String filterImageUrl(String imageUrl) {
+        int index = imageUrl.toLowerCase().indexOf(".jpg");
+        if (index >= 0) {
+            return imageUrl.substring(0, index + 4);
+        }
+        return imageUrl;
+    }
 }
