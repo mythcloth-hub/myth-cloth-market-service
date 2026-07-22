@@ -1,11 +1,11 @@
 package com.mesofi.mythclothmarket.crawler.impl;
 
-import java.util.Arrays;
+import static com.mesofi.mythclothmarket.utils.RegexUtils.compileAliases;
+
 import java.util.Currency;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -16,6 +16,7 @@ import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper;
 import com.mesofi.mythclothmarket.crawler.model.ElementSelector;
 import com.mesofi.mythclothmarket.crawler.model.LineUp;
 import com.mesofi.mythclothmarket.crawler.model.LineUpDetection;
+import com.mesofi.mythclothmarket.crawler.model.LineUpMatcher;
 import com.mesofi.mythclothmarket.crawler.model.ListingStatus;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
 import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
@@ -54,65 +55,6 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
             new LineUpMatcher(LineUp.SAINT_CLOTH_LEGEND, compileAliases("myth cloth legend")),
             new LineUpMatcher(LineUp.CROWN, compileAliases("crown cloth")),
             new LineUpMatcher(LineUp.DD_PANORAMATION, compileAliases("d.d.panoramation")));
-
-    /**
-     * Associates a {@link LineUp} with the compiled pattern used to recognize it in
-     * a Nin-Nin-Game product name prefix.
-     *
-     * @param lineUp
-     *            the lineup represented by this matcher
-     * @param pattern
-     *            the compiled pattern used to identify the lineup
-     */
-    private record LineUpMatcher(LineUp lineUp, Pattern pattern) {
-
-        /**
-         * Determines whether the specified text matches this lineup.
-         *
-         * @param text
-         *            the product name prefix to test
-         * @return {@code true} if the text matches this lineup; {@code false} otherwise
-         */
-        boolean matches(String text) {
-            return pattern.matcher(text).find();
-        }
-
-        /**
-         * Removes the matched lineup prefix from the supplied product name and returns
-         * the remaining character or product name.
-         *
-         * @param text
-         *            the complete product name
-         * @return the product name without the lineup prefix, or {@code null} if this
-         *         matcher does not recognize the supplied text
-         */
-        String extractProductName(String text) {
-            Matcher matcher = pattern.matcher(text);
-            if (matcher.find()) {
-                return text.substring(matcher.end()).trim();
-            }
-            return null;
-        }
-    }
-
-    /**
-     * Compiles a case-insensitive pattern that matches any of the supplied lineup
-     * aliases as complete words.
-     * <p>
-     * Each alias is escaped using {@link Pattern#quote(String)} so that special
-     * regular expression characters are treated literally. Word boundaries are
-     * added to prevent partial matches (for example, matching {@code EX} inside a
-     * longer word).
-     *
-     * @param aliases
-     *            the aliases that identify a lineup
-     * @return a compiled pattern matching any of the supplied aliases
-     */
-    private static Pattern compileAliases(String... aliases) {
-        return Pattern.compile(
-                "\\b(?:" + Arrays.stream(aliases).map(Pattern::quote).collect(Collectors.joining("|")) + ")\\b",
-                Pattern.CASE_INSENSITIVE);
-    }
 
     /**
      * Characters that separate the lineup portion from the character name in a

@@ -45,7 +45,7 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
     private static final Logger log = LoggerFactory.getLogger(AbstractPaginatedStoreCrawler.class);
 
     // Add unnecessary words to remove for all the stores.
-    private static final Set<String> KEYWORDS_TO_REMOVE = Set.of("");
+    private static final Set<String> KEYWORDS_TO_REMOVE = Set.of("\"", "/", "・");
 
     private final PageFetcher pageFetcher;
     private final CrawlerMapper crawlerMapper;
