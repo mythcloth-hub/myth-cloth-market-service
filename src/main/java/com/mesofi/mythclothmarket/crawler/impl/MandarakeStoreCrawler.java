@@ -76,7 +76,7 @@ public class MandarakeStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     public String storeBaseUrl() {
-        return "https://order.mandarake.co.jp";
+        return StoreName.MANDARAKE.website().toString();
     }
 
     /**

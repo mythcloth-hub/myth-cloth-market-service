@@ -93,7 +93,7 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     public String storeBaseUrl() {
-        return "https://www.nin-nin-game.com";
+        return StoreName.NIN_NIN_GAME.website().toString();
     }
 
     /**

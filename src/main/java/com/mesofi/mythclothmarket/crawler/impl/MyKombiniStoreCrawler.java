@@ -75,7 +75,7 @@ public class MyKombiniStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     public String storeBaseUrl() {
-        return "https://mykombini.com";
+        return StoreName.MY_KOMBINI.website().toString();
     }
 
     /**
