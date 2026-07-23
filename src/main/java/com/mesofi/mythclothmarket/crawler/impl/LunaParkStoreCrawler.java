@@ -74,7 +74,7 @@ public class LunaParkStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     public String storeBaseUrl() {
-        return StoreName.LUNA_PARK.toString();
+        return StoreName.LUNA_PARK.website().toString();
     }
 
     /**
