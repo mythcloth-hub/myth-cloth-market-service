@@ -4,15 +4,21 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Raw listing fields extracted directly from HTML before normalization.
+ * Raw listing fields extracted directly from a store's HTML before
+ * normalization and conversion into the domain model.
+ * <p>
+ * Some fields, such as discount and availability, may be {@code null} if the
+ * store does not provide that information.
+ * </p>
  */
 @Getter
 @Setter
 public class RawStoreListing {
-    private String rawName;
+    private String originalName;
+    private String normalizedName;
     private String imageUrl;
-    private String url;
-    private String price;
-    private String discount;
-    private String availability;
+    private String productUrl;
+    private String priceText;
+    private String discountText;
+    private String availabilityText;
 }

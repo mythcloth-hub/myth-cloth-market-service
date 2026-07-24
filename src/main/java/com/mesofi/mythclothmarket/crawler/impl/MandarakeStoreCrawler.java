@@ -22,20 +22,21 @@ import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
 
 /**
  * {@link com.mesofi.mythclothmarket.crawler.StoreCrawler} implementation for
- * the Luna Park online store.
+ * the Mandarake online store.
  * <p>
- * This crawler traverses Luna Park's paginated Myth Cloth search results,
- * extracts raw listing data, and delegates normalization to the shared crawler
- * infrastructure.
+ * This crawler traverses the paginated Mandarake search results for Myth Cloth
+ * products, extracts raw listing data, and delegates normalization to the
+ * shared crawler infrastructure.
  * <p>
- * Besides applying store-specific title cleanup and lineup alias detection,
- * this implementation uses fixed resolution rules for currency and stock status
- * based on how Luna Park exposes listing data.
+ * Mandarake listings are published in Japanese Yen and usually omit explicit
+ * availability signals in the listing card. This implementation therefore uses
+ * store-specific defaults for currency and status resolution.
  */
 @Component
-public class LunaParkStoreCrawler extends AbstractPaginatedStoreCrawler {
+public class MandarakeStoreCrawler extends AbstractPaginatedStoreCrawler {
 
-    private static final Pattern UNNECESSARY_WORDS_PATTERN = Pattern.compile("\\b(?:japan version|bandai|saint)\\b",
+    private static final Pattern UNNECESSARY_WORDS_PATTERN = Pattern.compile(
+            "\\b(?:bandainamco/bandaispirits|bandaispirits|bandai|spirits|amco/|namco|namco/|masami|kurumada|saint seiya)\\b",
             Pattern.CASE_INSENSITIVE);
 
     /**
@@ -45,11 +46,12 @@ public class LunaParkStoreCrawler extends AbstractPaginatedStoreCrawler {
      * appear before broader ones.
      */
     private static final List<LineUpMatcher> LINE_UP_MATCHERS = List.of(
-            new LineUpMatcher(LineUp.MYTH_CLOTH_EX, compileAliases("myth cloth ex", "cloth myth ex")),
+            new LineUpMatcher(LineUp.MYTH_CLOTH_EX, compileAliases("cloth myth ex", "myth cloth ex")),
+            new LineUpMatcher(LineUp.APPENDIX, compileAliases("appendix", "appendix/appendix")),
             new LineUpMatcher(LineUp.MYTH_CLOTH, compileAliases("myth cloth", "cloth myth")));
 
     /**
-     * Creates a crawler for the Luna Park storefront.
+     * Creates a crawler for the Mandarake storefront.
      *
      * @param pageFetcher
      *            the component responsible for retrieving the HTML pages
@@ -57,7 +59,7 @@ public class LunaParkStoreCrawler extends AbstractPaginatedStoreCrawler {
      *            the mapper that converts raw scraped values into normalized
      *            {@code StoreListing} instances
      */
-    public LunaParkStoreCrawler(@Qualifier("jsoupHtmlFetcher") PageFetcher pageFetcher, CrawlerMapper mapper) {
+    public MandarakeStoreCrawler(@Qualifier("playwrightHtmlFetcher") PageFetcher pageFetcher, CrawlerMapper mapper) {
         super(pageFetcher, mapper);
     }
 
@@ -66,7 +68,7 @@ public class LunaParkStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     public StoreName store() {
-        return StoreName.LUNA_PARK;
+        return StoreName.MANDARAKE;
     }
 
     /**
@@ -74,38 +76,34 @@ public class LunaParkStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     public String storeBaseUrl() {
-        return StoreName.LUNA_PARK.website().toString();
+        return StoreName.MANDARAKE.website().toString();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String getInitialSearchUrl() {
-        return "/search?q=myth+cloth";
+    protected String getInitialSearchUrl() {
+        return "/order/listPage/list?dispAdult=0&soldOut=1&keyword=myth%20cloth&lang=en";
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public int getMaxPages() {
-        return 4;
+    protected int getMaxPages() {
+        return 10;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public StorePageSelectors selectors() {
-        return new StorePageSelectors("li[data-hook=\"product-list-grid-item\"]",
-                "[data-hook=\"product-list-pagination-seo\"] a[data-hook=\"product-list-pagination-link-seo-link\"]",
-                new ElementSelector("p[data-hook=\"product-item-name\"]"),
-                new ElementSelector(
-                        "li[data-hook=\"product-list-grid-item\"] [data-hook=\"ProductMediaDataHook.Images\"] img:first-of-type",
-                        "src"),
-                new ElementSelector("a[data-hook=\"product-item-container\"]", "href"),
-                new ElementSelector("span[data-hook=\"product-item-price-to-pay\"]"), null, null);
+    protected StorePageSelectors selectors() {
+        return new StorePageSelectors("div.block[data-adult=\"0\"]", "div.next a",
+                new ElementSelector("div.title > p > a"), new ElementSelector("div.thum > a > img", "src"),
+                new ElementSelector("div.thum > a", "href"), new ElementSelector("div.price > p"), null,
+                new ElementSelector("div.addcart.addcart-text-en > a"));
     }
 
     /**
@@ -130,33 +128,48 @@ public class LunaParkStoreCrawler extends AbstractPaginatedStoreCrawler {
     }
 
     /**
-     * Resolves the currency used by Luna Park listings.
+     * Resolves the currency used by Mandarake listings.
      * <p>
-     * Luna Park publishes Myth Cloth prices in Japanese Yen, therefore all listings
-     * are assigned the {@code JPY} currency.
+     * Mandarake search results for this crawler are always priced in Japanese Yen.
      *
      * @param priceText
      *            raw price text extracted from the listing
      * @return {@code JPY} for all listings
      */
     @Override
-    public Currency determineCurrency(String priceText) {
+    protected Currency determineCurrency(String priceText) {
         return Currency.getInstance("JPY");
     }
 
     /**
-     * Resolves availability for Luna Park listing cards.
+     * Resolves availability for Mandarake listing cards.
      * <p>
-     * Luna Park currently exposes only products that are available for purchase,
-     * therefore every listing is considered {@link ListingStatus#IN_STOCK}.
+     * The configured listing selector only includes entries with an active cart
+     * action, so crawled items are treated as in stock.
      *
      * @param availabilityText
      *            raw availability text extracted from the listing
      * @return {@link ListingStatus#IN_STOCK} for all crawled listings
      */
     @Override
-    public ListingStatus calculateListingStatus(String availabilityText) {
+    protected ListingStatus calculateListingStatus(String availabilityText) {
         return ListingStatus.IN_STOCK;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected boolean prependedStoreBaseUrlInProductUrl() {
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected boolean prependedStoreBaseUrlInImageUrl() {
+        return false;
     }
 
     /**
@@ -171,15 +184,4 @@ public class LunaParkStoreCrawler extends AbstractPaginatedStoreCrawler {
         return UNNECESSARY_WORDS_PATTERN.matcher(nameText).replaceAll("").replaceAll("\\s+", " ").trim();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected String filterImageUrl(String imageUrl) {
-        int index = imageUrl.toLowerCase().indexOf(".jpg");
-        if (index >= 0) {
-            return imageUrl.substring(0, index + 4);
-        }
-        return imageUrl;
-    }
 }

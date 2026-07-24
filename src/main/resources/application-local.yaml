@@ -11,13 +11,23 @@ myth-cloth-market-service:
         cron: "0 * * * * ?" # Every 2 hours
         enabled: false
 
+      - key: "MANDARAKE"
+        name: "Mandarake Crawler"
+        cron: "0 0 9 * * ?"   # Every day at 9 AM
+        enabled: false
+
       - key: "LUNA_PARK"
         name: "Luna Park Crawler"
         cron: "0 0 12 * * ?"   # Every day at noon
         enabled: false
 
       - key: "MY_KOMBINI"
-        name: "My Kombin Crawler"
+        name: "My Kombini Crawler"
         cron: "0 0 11 * * ?"   # Every day at 11 AM
         enabled: false
 
+spring:
+  rabbitmq:
+    host: localhost
+    username: mythcloth
+    password: mythcloth

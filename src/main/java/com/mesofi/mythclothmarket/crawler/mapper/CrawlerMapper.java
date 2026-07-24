@@ -18,7 +18,13 @@ import com.mesofi.mythclothmarket.crawler.model.StoreListing;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
 
 /**
- * Maps raw crawler fields into normalized {@link StoreListing} records.
+ * Maps raw values extracted by store crawlers into normalized
+ * {@link StoreListing} instances.
+ * <p>
+ * This mapper is responsible for converting scraped text into strongly typed
+ * values, including prices, discounts, currencies, availability status, and
+ * computed discounted prices.
+ * </p>
  */
 @Mapper(componentModel = "spring")
 public interface CrawlerMapper {
@@ -29,37 +35,46 @@ public interface CrawlerMapper {
     Pattern DISCOUNT_PATTERN = Pattern.compile("\\d+");
 
     /**
-     * Converts raw scraped values into a normalized listing.
+     * Converts a raw store listing into a normalized {@link StoreListing}.
      *
      * @param raw
-     *            raw listing values extracted from HTML.
+     *            the raw listing values extracted from the store page.
      * @param storeName
-     *            store identifier for the listing.
+     *            the store that produced the listing.
+     * @param lineUp
+     *            the detected figurine line-up, or {@code null} if it could not be
+     *            determined.
+     * @param calculateCurrency
+     *            function that determines the listing currency from the raw price
+     *            text.
      * @param calculateListingStatus
-     *            function that maps raw availability text to listing status.
-     * @return normalized {@link StoreListing} instance.
+     *            function that converts the raw availability text into a
+     *            {@link ListingStatus}.
+     * @return the normalized store listing.
      */
     @Mapping(target = "store", expression = "java(storeName)")
-    @Mapping(target = "productName", source = "rawName")
-    @Mapping(target = "lineUp", expression = "java(calculateLineUp.apply(raw.getRawName()))")
-    @Mapping(target = "price", source = "price", qualifiedByName = "parsePrice")
-    @Mapping(target = "discount", source = "discount", qualifiedByName = "parseDiscount")
-    @Mapping(target = "discountedPrice", source = "raw", qualifiedByName = "calculateDiscountedPrice")
-    @Mapping(target = "currency", expression = "java(calculateCurrency.apply(raw.getPrice()))")
-    @Mapping(target = "productUrl", source = "url")
+    @Mapping(target = "lineUp", expression = "java(lineUp)")
+    @Mapping(target = "originalProductName", source = "originalName")
+    @Mapping(target = "productName", source = "normalizedName")
     @Mapping(target = "productImageUrl", source = "imageUrl")
-    @Mapping(target = "status", expression = "java(calculateListingStatus.apply(raw.getAvailability()))")
+    @Mapping(target = "productUrl", source = "productUrl")
+    @Mapping(target = "price", source = "priceText", qualifiedByName = "parsePrice")
+    @Mapping(target = "discount", source = "discountText", qualifiedByName = "parseDiscount")
+    @Mapping(target = "discountedPrice", source = "raw", qualifiedByName = "calculateDiscountedPrice")
+    @Mapping(target = "currency", expression = "java(calculateCurrency.apply(raw.getPriceText()))")
+    @Mapping(target = "status", expression = "java(calculateListingStatus.apply(raw.getAvailabilityText()))")
     @Mapping(target = "checkedAt", expression = "java(Instant.now())")
-    StoreListing toStoreListing(RawStoreListing raw, @Context StoreName storeName,
-            @Context Function<String, LineUp> calculateLineUp, @Context Function<String, Currency> calculateCurrency,
+    StoreListing toStoreListing(RawStoreListing raw, @Context StoreName storeName, @Context LineUp lineUp,
+            @Context Function<String, Currency> calculateCurrency,
             @Context Function<String, ListingStatus> calculateListingStatus);
 
     /**
-     * Parses the numeric portion of a raw price string.
+     * Extracts and parses the numeric value from a raw price string.
      *
      * @param priceString
-     *            raw price text.
-     * @return parsed price, or {@code null} when parsing is not possible.
+     *            the raw price text.
+     * @return the parsed price, or {@code null} if the price is missing or cannot
+     *         be parsed.
      */
     @Named("parsePrice")
     default BigDecimal parsePrice(String priceString) {
@@ -70,12 +85,11 @@ public interface CrawlerMapper {
         Matcher matcher = PRICE_PATTERN.matcher(priceString);
         if (matcher.find()) {
             try {
-                // Remove commas to prevent NumberFormatException
+                // Remove thousands separators and whitespace before parsing.
                 String cleanNumber = matcher.group().replace(",", "").replace(" ", "");
                 return new BigDecimal(cleanNumber);
             } catch (NumberFormatException e) {
-                // Protects your crawler from crashing if it encounters badly formed data (e.g.,
-                // "1.2.3")
+                // Ignore malformed numeric values.
                 return null;
             }
         }
@@ -84,11 +98,12 @@ public interface CrawlerMapper {
     }
 
     /**
-     * Parses discount percentage from raw discount text.
+     * Extracts and parses the discount percentage from raw discount text.
      *
      * @param discountString
-     *            raw discount text.
-     * @return parsed discount percent, or {@code null} if unavailable/invalid.
+     *            the raw discount text.
+     * @return the parsed discount percentage, or {@code null} if no valid
+     *         percentage could be extracted.
      */
     @Named("parseDiscount")
     default BigDecimal parseDiscount(String discountString) {
@@ -107,12 +122,16 @@ public interface CrawlerMapper {
     }
 
     /**
-     * Calculates discounted price using parsed base price and discount percentage.
+     * Calculates the discounted price for a listing.
+     * <p>
+     * If no discount is available, the original price is returned. If the original
+     * price cannot be determined, {@code null} is returned.
+     * </p>
      *
      * @param raw
-     *            raw listing values.
-     * @return discounted price, original price if no discount exists, or
-     *         {@code null} when price is unavailable.
+     *            the raw listing values.
+     * @return the discounted price, the original price when no discount applies, or
+     *         {@code null} if the original price is unavailable.
      */
     @Named("calculateDiscountedPrice")
     default BigDecimal calculateDiscountedPrice(RawStoreListing raw) {
@@ -120,13 +139,13 @@ public interface CrawlerMapper {
             return null;
         }
 
-        BigDecimal originalPrice = parsePrice(raw.getPrice());
+        BigDecimal originalPrice = parsePrice(raw.getPriceText());
         if (originalPrice == null) {
             return null;
         }
 
-        BigDecimal discountPercent = parseDiscount(raw.getDiscount());
-        // If there is no discount, the discounted price is simply the original price
+        BigDecimal discountPercent = parseDiscount(raw.getDiscountText());
+        // No price available.
         if (discountPercent == null || discountPercent.compareTo(BigDecimal.ZERO) == 0) {
             return originalPrice;
         }

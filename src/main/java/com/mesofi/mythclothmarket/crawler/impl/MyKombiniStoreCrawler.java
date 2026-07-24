@@ -1,6 +1,10 @@
 package com.mesofi.mythclothmarket.crawler.impl;
 
+import static com.mesofi.mythclothmarket.utils.RegexUtils.compileAliases;
+
 import java.util.Currency;
+import java.util.List;
+import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -10,6 +14,8 @@ import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
 import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper;
 import com.mesofi.mythclothmarket.crawler.model.ElementSelector;
 import com.mesofi.mythclothmarket.crawler.model.LineUp;
+import com.mesofi.mythclothmarket.crawler.model.LineUpDetection;
+import com.mesofi.mythclothmarket.crawler.model.LineUpMatcher;
 import com.mesofi.mythclothmarket.crawler.model.ListingStatus;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
 import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
@@ -18,24 +24,39 @@ import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
  * {@link com.mesofi.mythclothmarket.crawler.StoreCrawler} implementation for
  * the MyKombini online store.
  * <p>
- * This crawler retrieves Myth Cloth product listings from MyKombini's paginated
- * search results and extracts product information such as the product name,
- * image URL, product URL, price, and availability.
+ * This crawler traverses MyKombini's paginated Myth Cloth search results,
+ * extracts raw listing data, and delegates normalization to the shared crawler
+ * infrastructure.
  * <p>
- * The extracted values are converted into normalized {@code StoreListing}
- * instances by the shared crawler infrastructure.
+ * Besides resolving MyKombini-specific availability labels, this implementation
+ * contains custom lineup detection rules based on aliases at the beginning of
+ * product titles.
  */
 @Component
 public class MyKombiniStoreCrawler extends AbstractPaginatedStoreCrawler {
+
+    private static final Pattern UNNECESSARY_WORDS_PATTERN = Pattern.compile("\\b(?:bandai|spirits|saint seiya)\\b",
+            Pattern.CASE_INSENSITIVE);
+
+    /**
+     * Ordered lineup aliases matched against the beginning of the product name.
+     * <p>
+     * Matchers are evaluated in declaration order, so more specific aliases must
+     * appear before broader ones.
+     */
+    private static final List<LineUpMatcher> LINE_UP_MATCHERS = List.of(
+            new LineUpMatcher(LineUp.MYTH_CLOTH_EX,
+                    compileAliases("myth cloth ex", "saint cloth myth ex", "cloth myth ex", "myth ex")),
+            new LineUpMatcher(LineUp.MYTH_CLOTH, compileAliases("myth cloth")));
 
     /**
      * Creates a crawler for the MyKombini storefront.
      *
      * @param pageFetcher
-     *            the component responsible for retrieving HTML pages
+     *            the component responsible for retrieving the HTML pages
      * @param mapper
-     *            the mapper that converts raw scraped values into normalized store
-     *            listings
+     *            the mapper that converts raw scraped values into normalized
+     *            {@code StoreListing} instances
      */
     public MyKombiniStoreCrawler(@Qualifier("jsoupHtmlFetcher") PageFetcher pageFetcher, CrawlerMapper mapper) {
         super(pageFetcher, mapper);
@@ -54,7 +75,7 @@ public class MyKombiniStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     public String storeBaseUrl() {
-        return "https://mykombini.com";
+        return StoreName.MY_KOMBINI.website().toString();
     }
 
     /**
@@ -86,25 +107,35 @@ public class MyKombiniStoreCrawler extends AbstractPaginatedStoreCrawler {
     }
 
     /**
-     * {@inheritDoc}
+     * Detects lineup aliases from the beginning of the product title.
+     * <p>
+     * If no known alias is found, the original product title is preserved and the
+     * lineup remains unresolved.
+     *
+     * @param nameText
+     *            complete product title
+     * @return detected lineup and normalized product name
      */
     @Override
-    public LineUp determineLineUp(String nameText) {
-        if (nameText.contains("ex")) {
-            return LineUp.MYTH_CLOTH_EX;
+    protected LineUpDetection determineLineUp(String nameText) {
+        for (LineUpMatcher matcher : LINE_UP_MATCHERS) {
+            if (matcher.matches(nameText)) {
+                return new LineUpDetection(matcher.lineUp(), matcher.extractProductName(nameText));
+            }
         }
-        return LineUp.MYTH_CLOTH;
+
+        return new LineUpDetection(null, nameText);
     }
 
     /**
-     * Determines the currency used by MyKombini listings.
+     * Resolves the currency used by MyKombini listings.
      * <p>
      * MyKombini publishes Myth Cloth prices in Japanese Yen, therefore all listings
      * are assigned the {@code JPY} currency.
      *
      * @param priceText
-     *            the raw price text extracted from the listing
-     * @return the Japanese Yen ({@code JPY}) currency
+     *            raw price text extracted from the listing
+     * @return {@code JPY} for all listings
      */
     @Override
     public Currency determineCurrency(String priceText) {
@@ -112,15 +143,14 @@ public class MyKombiniStoreCrawler extends AbstractPaginatedStoreCrawler {
     }
 
     /**
-     * Converts MyKombini availability information into a normalized
-     * {@link ListingStatus}.
+     * Resolves MyKombini availability labels into normalized listing statuses.
      * <p>
      * Listings displaying the "Add to cart" action are considered to be in stock.
      * All other values are treated as out of stock.
      *
      * @param availabilityText
-     *            the raw availability text extracted from the listing
-     * @return the corresponding listing status
+     *            raw availability text extracted from the listing
+     * @return normalized listing status for the given availability label
      */
     @Override
     public ListingStatus calculateListingStatus(String availabilityText) {
@@ -128,5 +158,17 @@ public class MyKombiniStoreCrawler extends AbstractPaginatedStoreCrawler {
             return ListingStatus.IN_STOCK;
         }
         return ListingStatus.OUT_OF_STOCK;
+    }
+
+    /**
+     * Removes store and franchise branding noise from product titles.
+     *
+     * @param nameText
+     *            raw product title
+     * @return cleaned title used for subsequent lineup matching and mapping
+     */
+    @Override
+    protected String removeUnnecessaryWords(String nameText) {
+        return UNNECESSARY_WORDS_PATTERN.matcher(nameText).replaceAll("").replaceAll("\\s+", " ").trim();
     }
 }
