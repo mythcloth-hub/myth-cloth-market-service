@@ -42,9 +42,7 @@ public class MarketPricingService {
         log.info("Retrieve and publish prices for store: {}", storeCrawler.store());
 
         // retrieves the prices ...
-        List<StoreListing> listingsToPublish = storeCrawler.crawlListings()
-                .stream()
-                .toList();
+        List<StoreListing> listingsToPublish = storeCrawler.crawlListings().stream().toList();
 
         listingsToPublish.forEach(messagePublisher::publishCrawlerMessage);
 

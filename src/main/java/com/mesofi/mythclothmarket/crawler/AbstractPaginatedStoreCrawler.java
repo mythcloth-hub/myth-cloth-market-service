@@ -104,9 +104,13 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
 
                 // Normalize extracted fields and adjust image URLs before mapping.
                 rawStoreListing.setNormalizedName(normalizeName(rawStoreListing.getOriginalName()));
+                if (prependedStoreBaseUrlInProductUrl()) {
+                    rawStoreListing.setProductUrl(storeBaseUrl() + rawStoreListing.getProductUrl());
+                }
                 if (prependedStoreBaseUrlInImageUrl()) {
                     rawStoreListing.setImageUrl(storeBaseUrl() + rawStoreListing.getImageUrl());
                 }
+
                 rawStoreListing.setImageUrl(filterImageUrl(rawStoreListing.getImageUrl()));
 
                 // Try to determine the lineup from the existing name to narrow the search.
@@ -276,6 +280,23 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
      */
     protected String filterImageUrl(String imageUrl) {
         return imageUrl;
+    }
+
+    /**
+     * Determines whether the store's base URL should be prepended to extracted
+     * product URLs.
+     * <p>
+     * Some stores expose product URLs as relative paths, requiring the store's base
+     * URL to construct absolute product URLs. Subclasses may override this method
+     * to indicate that the base URL should be included. The default implementation
+     * returns {@code false}.
+     * </p>
+     *
+     * @return {@code true} if the store's base URL should be prepended to product
+     *         URLs; {@code false} otherwise
+     */
+    protected boolean prependedStoreBaseUrlInProductUrl() {
+        return false;
     }
 
     /**
