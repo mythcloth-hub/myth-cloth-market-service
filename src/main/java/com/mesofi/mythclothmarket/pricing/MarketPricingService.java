@@ -42,12 +42,12 @@ public class MarketPricingService {
         log.info("Retrieve and publish prices for store: {}", storeCrawler.store());
 
         // retrieves the prices ...
-        List<StoreListing> storeListings = storeCrawler.crawlListings();
-        for (StoreListing storeListing : storeListings) {
-            // publishes each listing to the message broker ...
-            messagePublisher.publishCrawlerMessage(storeListing);
-        }
+        List<StoreListing> listingsToPublish = storeCrawler.crawlListings()
+                .stream()
+                .toList();
 
-        log.info("{} figurines were published", storeListings.size());
+        listingsToPublish.forEach(messagePublisher::publishCrawlerMessage);
+
+        log.info("{} figurines were published.", listingsToPublish.size());
     }
 }
