@@ -33,6 +33,8 @@ public class MarketPricingService {
      * <p>
      * The supplied {@link StoreCrawler} encapsulates the crawling logic for a
      * specific retailer, including navigation and extraction of product data.
+     * Publishing failures are isolated per listing so one error does not prevent
+     * remaining listings from being processed.
      *
      * @param storeCrawler
      *            the crawler responsible for retrieving listings from a specific
@@ -44,8 +46,18 @@ public class MarketPricingService {
         // retrieves the prices ...
         List<StoreListing> listingsToPublish = storeCrawler.crawlListings().stream().toList();
 
-        listingsToPublish.forEach(messagePublisher::publishCrawlerMessage);
+        int failedMessages = 0;
+        for (StoreListing listing : listingsToPublish) {
+            try {
+                messagePublisher.publishCrawlerMessage(listing);
+            } catch (RuntimeException ex) {
+                failedMessages++;
+                log.error("Error publishing listing for store: {} with product URL: {}", listing.store(),
+                        listing.productUrl(), ex);
+            }
+        }
 
-        log.info("{} figurines were published.", listingsToPublish.size());
+        int publishedMessages = listingsToPublish.size() - failedMessages;
+        log.info("{} figurines were published. {} failed to publish.", publishedMessages, failedMessages);
     }
 }

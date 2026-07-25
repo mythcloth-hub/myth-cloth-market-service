@@ -1,7 +1,8 @@
-package com.mesofi.mythclothmarket.crawler.impl;
+package com.mesofi.mythclothmarket.crawler.impl.jp;
 
 import static com.mesofi.mythclothmarket.utils.RegexUtils.compileAliases;
 
+import java.net.URI;
 import java.util.Currency;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -30,10 +31,10 @@ import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
  * shared crawler infrastructure.
  * <p>
  * Besides translating Nin-Nin-Game specific currencies and availability labels,
- * this implementation contains custom logic for detecting a product's
- * {@link LineUp}. Product titles are not consistently formatted, so the crawler
- * supports multiple separator styles and also recognizes lineup aliases that
- * appear directly at the beginning of a product name.
+ * this implementation customizes the lineup detection step inherited from
+ * {@link AbstractPaginatedStoreCrawler}. Product titles are not consistently
+ * formatted, so the crawler supports multiple separator styles before
+ * delegating to alias-based matching through {@link #getLineUpMatchers()}.
  */
 @Component
 public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
@@ -60,10 +61,9 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
      * Characters that separate the lineup portion from the character name in a
      * Nin-Nin-Game product title.
      * <p>
-     * The separators are evaluated in declaration order. If none of the explicit
-     * separators are found, the special {@code '\0'} marker instructs the detection
-     * algorithm to attempt extracting the lineup directly from the beginning of the
-     * product name.
+     * The separators are evaluated in declaration order. If none of them is
+     * present, lineup detection falls back to the default matcher-based algorithm
+     * provided by {@link AbstractPaginatedStoreCrawler#determineLineUp(String)}.
      */
     private static final List<Character> TOKEN_SEPARATORS = List.of('-', ':');
 
@@ -92,8 +92,8 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
      * {@inheritDoc}
      */
     @Override
-    public String storeBaseUrl() {
-        return StoreName.NIN_NIN_GAME.website().toString();
+    public URI storeBaseUrl() {
+        return StoreName.NIN_NIN_GAME.website();
     }
 
     /**
@@ -140,9 +140,10 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
      * </ul>
      * <p>
      * This implementation first attempts to split the title using the configured
-     * separator characters. If no separator is found, it falls back to matching the
-     * lineup directly against the beginning of the product name and removes the
-     * matched prefix from the returned normalized name.
+     * separator characters. If no separator is found, it delegates to the default
+     * matcher-based implementation from {@link AbstractPaginatedStoreCrawler},
+     * which evaluates {@link #getLineUpMatchers()} against the beginning of the
+     * product name and removes the matched lineup prefix from the normalized name.
      */
     @Override
     public LineUpDetection determineLineUp(String nameText) {
@@ -164,24 +165,17 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
             return new LineUpDetection(null, normalizedName);
         }
 
-        return determineLineUpWithoutSeparator(nameText);
+        return super.determineLineUp(nameText);
     }
 
     /**
-     * Attempts to determine the lineup when the product title does not contain an
-     * explicit separator between the lineup and the character name.
+     * Provides the lineup matchers used by the parent class fallback algorithm.
      *
-     * @param nameText
-     *            complete product title
-     * @return detected lineup and normalized name
+     * @return ordered lineup matchers for Nin-Nin-Game product titles
      */
-    private LineUpDetection determineLineUpWithoutSeparator(String nameText) {
-        for (LineUpMatcher matcher : LINE_UP_MATCHERS) {
-            if (matcher.matches(nameText)) {
-                return new LineUpDetection(matcher.lineUp(), matcher.extractProductName(nameText));
-            }
-        }
-        return new LineUpDetection(null, nameText);
+    @Override
+    protected List<LineUpMatcher> getLineUpMatchers() {
+        return LINE_UP_MATCHERS;
     }
 
     /**

@@ -26,18 +26,18 @@ public record LineUpMatcher(LineUp lineUp, Pattern pattern) {
     }
 
     /**
-     * Removes the matched lineup prefix from the supplied product name and returns
-     * the remaining character or product name.
+     * Removes the substring matched by this extractor's pattern from the supplied
+     * product name and returns the remaining text.
      *
      * @param text
      *            the complete product name
-     * @return the product name without the lineup prefix, or {@code null} if this
-     *         matcher does not recognize the supplied text
+     * @return the product name with the matched substring removed, or {@code null}
+     *         if the supplied text does not match this extractor's pattern
      */
     public String extractProductName(String text) {
         Matcher matcher = pattern.matcher(text);
         if (matcher.find()) {
-            return text.substring(matcher.end()).trim();
+            return (text.substring(0, matcher.start()).trim() + " " + text.substring(matcher.end()).trim()).trim();
         }
         return null;
     }

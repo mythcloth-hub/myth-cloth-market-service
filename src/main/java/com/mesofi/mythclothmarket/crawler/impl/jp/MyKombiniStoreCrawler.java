@@ -1,7 +1,8 @@
-package com.mesofi.mythclothmarket.crawler.impl;
+package com.mesofi.mythclothmarket.crawler.impl.jp;
 
 import static com.mesofi.mythclothmarket.utils.RegexUtils.compileAliases;
 
+import java.net.URI;
 import java.util.Currency;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -22,21 +23,20 @@ import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
 
 /**
  * {@link com.mesofi.mythclothmarket.crawler.StoreCrawler} implementation for
- * the Mandarake online store.
+ * the MyKombini online store.
  * <p>
- * This crawler traverses the paginated Mandarake search results for Myth Cloth
- * products, extracts raw listing data, and delegates normalization to the
- * shared crawler infrastructure.
+ * This crawler traverses MyKombini's paginated Myth Cloth search results,
+ * extracts raw listing data, and delegates normalization to the shared crawler
+ * infrastructure.
  * <p>
- * Mandarake listings are published in Japanese Yen and usually omit explicit
- * availability signals in the listing card. This implementation therefore uses
- * store-specific defaults for currency and status resolution.
+ * Besides resolving MyKombini-specific availability labels, this implementation
+ * contains custom lineup detection rules based on aliases at the beginning of
+ * product titles.
  */
 @Component
-public class MandarakeStoreCrawler extends AbstractPaginatedStoreCrawler {
+public class MyKombiniStoreCrawler extends AbstractPaginatedStoreCrawler {
 
-    private static final Pattern UNNECESSARY_WORDS_PATTERN = Pattern.compile(
-            "\\b(?:bandainamco/bandaispirits|bandaispirits|bandai|spirits|amco/|namco|namco/|masami|kurumada|saint seiya)\\b",
+    private static final Pattern UNNECESSARY_WORDS_PATTERN = Pattern.compile("\\b(?:bandai|spirits|saint seiya)\\b",
             Pattern.CASE_INSENSITIVE);
 
     /**
@@ -46,12 +46,12 @@ public class MandarakeStoreCrawler extends AbstractPaginatedStoreCrawler {
      * appear before broader ones.
      */
     private static final List<LineUpMatcher> LINE_UP_MATCHERS = List.of(
-            new LineUpMatcher(LineUp.MYTH_CLOTH_EX, compileAliases("cloth myth ex", "myth cloth ex")),
-            new LineUpMatcher(LineUp.APPENDIX, compileAliases("appendix", "appendix/appendix")),
-            new LineUpMatcher(LineUp.MYTH_CLOTH, compileAliases("myth cloth", "cloth myth")));
+            new LineUpMatcher(LineUp.MYTH_CLOTH_EX,
+                    compileAliases("myth cloth ex", "saint cloth myth ex", "cloth myth ex", "myth ex")),
+            new LineUpMatcher(LineUp.MYTH_CLOTH, compileAliases("myth cloth")));
 
     /**
-     * Creates a crawler for the Mandarake storefront.
+     * Creates a crawler for the MyKombini storefront.
      *
      * @param pageFetcher
      *            the component responsible for retrieving the HTML pages
@@ -59,7 +59,7 @@ public class MandarakeStoreCrawler extends AbstractPaginatedStoreCrawler {
      *            the mapper that converts raw scraped values into normalized
      *            {@code StoreListing} instances
      */
-    public MandarakeStoreCrawler(@Qualifier("playwrightHtmlFetcher") PageFetcher pageFetcher, CrawlerMapper mapper) {
+    public MyKombiniStoreCrawler(@Qualifier("jsoupHtmlFetcher") PageFetcher pageFetcher, CrawlerMapper mapper) {
         super(pageFetcher, mapper);
     }
 
@@ -68,42 +68,43 @@ public class MandarakeStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     public StoreName store() {
-        return StoreName.MANDARAKE;
+        return StoreName.MY_KOMBINI;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String storeBaseUrl() {
-        return StoreName.MANDARAKE.website().toString();
+    public URI storeBaseUrl() {
+        return StoreName.MY_KOMBINI.website();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected String getInitialSearchUrl() {
-        return "/order/listPage/list?dispAdult=0&soldOut=1&keyword=myth%20cloth&lang=en";
+    public String getInitialSearchUrl() {
+        return "/en/Research?orderby=position&orderway=desc&search_query=myth+cloth&submit_search=OK";
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected int getMaxPages() {
-        return 10;
+    public int getMaxPages() {
+        return 5;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected StorePageSelectors selectors() {
-        return new StorePageSelectors("div.block[data-adult=\"0\"]", "div.next a",
-                new ElementSelector("div.title > p > a"), new ElementSelector("div.thum > a > img", "src"),
-                new ElementSelector("div.thum > a", "href"), new ElementSelector("div.price > p"), null,
-                new ElementSelector("div.addcart.addcart-text-en > a"));
+    public StorePageSelectors selectors() {
+        return new StorePageSelectors("li.ajax_block_product", "#pagination_next a",
+                new ElementSelector("a.product_img_link", "title"),
+                new ElementSelector("a.product_img_link > img", "src"),
+                new ElementSelector("a.product_img_link", "href"), new ElementSelector("span.price"), null,
+                new ElementSelector("a.exclusive.ajax_add_to_cart_button"));
     }
 
     /**
@@ -128,48 +129,47 @@ public class MandarakeStoreCrawler extends AbstractPaginatedStoreCrawler {
     }
 
     /**
-     * Resolves the currency used by Mandarake listings.
+     * Provides the lineup matchers used by the parent class default lineup
+     * detection logic.
+     *
+     * @return ordered lineup matchers for MyKombini product titles
+     */
+    @Override
+    protected List<LineUpMatcher> getLineUpMatchers() {
+        return LINE_UP_MATCHERS;
+    }
+
+    /**
+     * Resolves the currency used by MyKombini listings.
      * <p>
-     * Mandarake search results for this crawler are always priced in Japanese Yen.
+     * MyKombini publishes Myth Cloth prices in Japanese Yen, therefore all listings
+     * are assigned the {@code JPY} currency.
      *
      * @param priceText
      *            raw price text extracted from the listing
      * @return {@code JPY} for all listings
      */
     @Override
-    protected Currency determineCurrency(String priceText) {
+    public Currency determineCurrency(String priceText) {
         return Currency.getInstance("JPY");
     }
 
     /**
-     * Resolves availability for Mandarake listing cards.
+     * Resolves MyKombini availability labels into normalized listing statuses.
      * <p>
-     * The configured listing selector only includes entries with an active cart
-     * action, so crawled items are treated as in stock.
+     * Listings displaying the "Add to cart" action are considered to be in stock.
+     * All other values are treated as out of stock.
      *
      * @param availabilityText
      *            raw availability text extracted from the listing
-     * @return {@link ListingStatus#IN_STOCK} for all crawled listings
+     * @return normalized listing status for the given availability label
      */
     @Override
-    protected ListingStatus calculateListingStatus(String availabilityText) {
-        return ListingStatus.IN_STOCK;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected boolean prependedStoreBaseUrlInProductUrl() {
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected boolean prependedStoreBaseUrlInImageUrl() {
-        return false;
+    public ListingStatus calculateListingStatus(String availabilityText) {
+        if ("Add to cart".equals(availabilityText)) {
+            return ListingStatus.IN_STOCK;
+        }
+        return ListingStatus.OUT_OF_STOCK;
     }
 
     /**
@@ -183,5 +183,4 @@ public class MandarakeStoreCrawler extends AbstractPaginatedStoreCrawler {
     protected String removeUnnecessaryWords(String nameText) {
         return UNNECESSARY_WORDS_PATTERN.matcher(nameText).replaceAll("").replaceAll("\\s+", " ").trim();
     }
-
 }
