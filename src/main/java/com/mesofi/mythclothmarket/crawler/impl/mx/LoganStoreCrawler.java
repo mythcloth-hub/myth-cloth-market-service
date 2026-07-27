@@ -41,8 +41,9 @@ public class LoganStoreCrawler extends AbstractPaginatedStoreCrawler {
      * appear before broader ones.
      */
     private static final List<LineUpMatcher> LINE_UP_MATCHERS = List.of(
-            new LineUpMatcher(LineUp.MYTH_CLOTH_EX, compileAliases("saint seiya myth cloth ex", "saint cloth myth ex")),
-            new LineUpMatcher(LineUp.MYTH_CLOTH, compileAliases("saint seiya saint cloth myth")));
+            new LineUpMatcher(LineUp.MYTH_CLOTH_EX,
+                    compileAliases("saint seiya myth cloth ex", "saint cloth myth ex", "myth cloth ex", "myth ex")),
+            new LineUpMatcher(LineUp.MYTH_CLOTH, compileAliases("saint seiya saint cloth myth", "saint cloth myth")));
 
     /**
      * Creates a crawler for the Logan Store storefront.
@@ -96,8 +97,8 @@ public class LoganStoreCrawler extends AbstractPaginatedStoreCrawler {
     protected StorePageSelectors selectors() {
         return new StorePageSelectors("li.product.type-product", null, new ElementSelector("div.flex-fill > a"),
                 new ElementSelector("div.tp-image-wrapper > img", "src"),
-                new ElementSelector("div.flex-fill > a", "href"),
-                new ElementSelector("del .woocommerce-Price-amount bdi"), new ElementSelector("div.info-sale"), null);
+                new ElementSelector("div.flex-fill > a", "href"), new ElementSelector(".woocommerce-Price-amount bdi"),
+                new ElementSelector("div.info-sale"), null);
     }
 
     /**

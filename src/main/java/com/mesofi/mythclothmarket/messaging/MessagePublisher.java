@@ -33,8 +33,8 @@ public class MessagePublisher {
             }
 
             rabbitTemplate.convertAndSend(RabbitMQConfig.ExchangeNames.CRAWLER_EXCHANGE, "crawler.job", storeListing);
-            log.info("Message published to crawler exchange: {} - {} [{}]", storeListing.store(), storeListing.lineUp(),
-                    storeListing.productName());
+            log.info("Message published to crawler exchange: {} - {} ${} [{}]", storeListing.store(),
+                    storeListing.lineUp(), storeListing.price(), storeListing.productName());
         } catch (Exception e) {
             log.error("Error publishing crawler message: {}", storeListing, e);
             throw e;
