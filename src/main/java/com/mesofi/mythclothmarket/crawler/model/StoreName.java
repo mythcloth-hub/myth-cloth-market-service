@@ -30,7 +30,17 @@ public enum StoreName {
     /**
      * My Kombini online store.
      */
-    MY_KOMBINI("https://mykombini.com");
+    MY_KOMBINI("https://mykombini.com"),
+
+    /**
+     * Myth Supplies online store.
+     */
+    MYTH_SUPPLIES("https://mythsupplies.com"),
+
+    /**
+     * Logan Store online store.
+     */
+    LOGAN_STORE("https://loganstore.com.mx");
 
     /**
      * Base website URI of the store.

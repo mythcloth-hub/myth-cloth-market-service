@@ -29,7 +29,7 @@ import jakarta.annotation.Nonnull;
  *            the selector used to extract the product availability or stock
  *            status
  */
-public record StorePageSelectors(@Nonnull String listingContainer, @Nonnull String nextPage,
+public record StorePageSelectors(@Nonnull String listingContainer, String nextPage,
         @Nonnull ElementSelector productName, @Nonnull ElementSelector productImage,
         @Nonnull ElementSelector productUrl, @Nonnull ElementSelector productPrice, ElementSelector discount,
         ElementSelector availability) {

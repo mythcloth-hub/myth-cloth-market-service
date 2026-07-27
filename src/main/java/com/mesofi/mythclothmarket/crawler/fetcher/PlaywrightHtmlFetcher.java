@@ -30,7 +30,7 @@ public class PlaywrightHtmlFetcher implements PageFetcher {
      * @return rendered page HTML.
      */
     @Override
-    public String fetch(String url) {
+    public String fetch(final URI url) {
 
         try (Playwright playwright = Playwright.create();
                 Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true))) {
@@ -49,7 +49,7 @@ public class PlaywrightHtmlFetcher implements PageFetcher {
                 page.waitForTimeout(1_500);
             }
 
-            page.navigate(url);
+            page.navigate(url.toString());
 
             if (requiresMandarakeWarmup(url) && page.url().startsWith("https://www.mandarake.co.jp/")) {
                 throw new BlockedPageException("Mandarake order page redirected to home page: " + url);
@@ -59,7 +59,7 @@ public class PlaywrightHtmlFetcher implements PageFetcher {
         }
     }
 
-    private boolean requiresMandarakeWarmup(String url) {
-        return MANDARAKE_ORDER_HOST.equalsIgnoreCase(URI.create(url).getHost());
+    private boolean requiresMandarakeWarmup(URI url) {
+        return MANDARAKE_ORDER_HOST.equalsIgnoreCase(url.getHost());
     }
 }

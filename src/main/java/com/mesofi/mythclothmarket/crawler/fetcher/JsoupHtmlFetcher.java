@@ -1,6 +1,7 @@
 package com.mesofi.mythclothmarket.crawler.fetcher;
 
 import java.io.IOException;
+import java.net.URI;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -24,9 +25,9 @@ public class JsoupHtmlFetcher implements PageFetcher {
      * @return HTML content, or {@code null} when the request fails.
      */
     @Override
-    public String fetch(final String url) {
+    public String fetch(final URI url) {
         try {
-            Document document = Jsoup.connect(url)
+            Document document = Jsoup.connect(url.toString())
                     .userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
                             + "(KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36")
                     .header("Accept-Language", "en-US,en;q=0.9").header("Upgrade-Insecure-Requests", "1").timeout(30000)

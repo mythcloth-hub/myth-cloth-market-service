@@ -1,7 +1,8 @@
-package com.mesofi.mythclothmarket.crawler.impl;
+package com.mesofi.mythclothmarket.crawler.impl.jp;
 
 import static com.mesofi.mythclothmarket.utils.RegexUtils.compileAliases;
 
+import java.net.URI;
 import java.util.Currency;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -22,20 +23,20 @@ import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
 
 /**
  * {@link com.mesofi.mythclothmarket.crawler.StoreCrawler} implementation for
- * the MyKombini online store.
+ * the Luna Park online store.
  * <p>
- * This crawler traverses MyKombini's paginated Myth Cloth search results,
+ * This crawler traverses Luna Park's paginated Myth Cloth search results,
  * extracts raw listing data, and delegates normalization to the shared crawler
  * infrastructure.
  * <p>
- * Besides resolving MyKombini-specific availability labels, this implementation
- * contains custom lineup detection rules based on aliases at the beginning of
- * product titles.
+ * Besides applying store-specific title cleanup and lineup alias detection,
+ * this implementation uses fixed resolution rules for currency and stock status
+ * based on how Luna Park exposes listing data.
  */
 @Component
-public class MyKombiniStoreCrawler extends AbstractPaginatedStoreCrawler {
+public class LunaParkStoreCrawler extends AbstractPaginatedStoreCrawler {
 
-    private static final Pattern UNNECESSARY_WORDS_PATTERN = Pattern.compile("\\b(?:bandai|spirits|saint seiya)\\b",
+    private static final Pattern UNNECESSARY_WORDS_PATTERN = Pattern.compile("\\b(?:japan version|bandai|saint)\\b",
             Pattern.CASE_INSENSITIVE);
 
     /**
@@ -45,12 +46,11 @@ public class MyKombiniStoreCrawler extends AbstractPaginatedStoreCrawler {
      * appear before broader ones.
      */
     private static final List<LineUpMatcher> LINE_UP_MATCHERS = List.of(
-            new LineUpMatcher(LineUp.MYTH_CLOTH_EX,
-                    compileAliases("myth cloth ex", "saint cloth myth ex", "cloth myth ex", "myth ex")),
-            new LineUpMatcher(LineUp.MYTH_CLOTH, compileAliases("myth cloth")));
+            new LineUpMatcher(LineUp.MYTH_CLOTH_EX, compileAliases("myth cloth ex", "cloth myth ex")),
+            new LineUpMatcher(LineUp.MYTH_CLOTH, compileAliases("myth cloth", "cloth myth")));
 
     /**
-     * Creates a crawler for the MyKombini storefront.
+     * Creates a crawler for the Luna Park storefront.
      *
      * @param pageFetcher
      *            the component responsible for retrieving the HTML pages
@@ -58,7 +58,7 @@ public class MyKombiniStoreCrawler extends AbstractPaginatedStoreCrawler {
      *            the mapper that converts raw scraped values into normalized
      *            {@code StoreListing} instances
      */
-    public MyKombiniStoreCrawler(@Qualifier("jsoupHtmlFetcher") PageFetcher pageFetcher, CrawlerMapper mapper) {
+    public LunaParkStoreCrawler(@Qualifier("jsoupHtmlFetcher") PageFetcher pageFetcher, CrawlerMapper mapper) {
         super(pageFetcher, mapper);
     }
 
@@ -67,15 +67,15 @@ public class MyKombiniStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     public StoreName store() {
-        return StoreName.MY_KOMBINI;
+        return StoreName.LUNA_PARK;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String storeBaseUrl() {
-        return StoreName.MY_KOMBINI.website().toString();
+    public URI storeBaseUrl() {
+        return StoreName.LUNA_PARK.website();
     }
 
     /**
@@ -83,7 +83,7 @@ public class MyKombiniStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     public String getInitialSearchUrl() {
-        return "/en/Research?orderby=position&orderway=desc&search_query=myth+cloth&submit_search=OK";
+        return "/search?q=myth+cloth";
     }
 
     /**
@@ -91,7 +91,7 @@ public class MyKombiniStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     public int getMaxPages() {
-        return 5;
+        return 4;
     }
 
     /**
@@ -99,11 +99,14 @@ public class MyKombiniStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     public StorePageSelectors selectors() {
-        return new StorePageSelectors("li.ajax_block_product", "#pagination_next a",
-                new ElementSelector("a.product_img_link", "title"),
-                new ElementSelector("a.product_img_link > img", "src"),
-                new ElementSelector("a.product_img_link", "href"), new ElementSelector("span.price"), null,
-                new ElementSelector("a.exclusive.ajax_add_to_cart_button"));
+        return new StorePageSelectors("li[data-hook=\"product-list-grid-item\"]",
+                "[data-hook=\"product-list-pagination-seo\"] a[data-hook=\"product-list-pagination-link-seo-link\"]",
+                new ElementSelector("p[data-hook=\"product-item-name\"]"),
+                new ElementSelector(
+                        "li[data-hook=\"product-list-grid-item\"] [data-hook=\"ProductMediaDataHook.Images\"] img:first-of-type",
+                        "src"),
+                new ElementSelector("a[data-hook=\"product-item-container\"]", "href"),
+                new ElementSelector("span[data-hook=\"product-item-price-to-pay\"]"), null, null);
     }
 
     /**
@@ -128,9 +131,20 @@ public class MyKombiniStoreCrawler extends AbstractPaginatedStoreCrawler {
     }
 
     /**
-     * Resolves the currency used by MyKombini listings.
+     * Provides the lineup matchers used by the parent class default lineup
+     * detection logic.
+     *
+     * @return ordered lineup matchers for Luna Park product titles
+     */
+    @Override
+    protected List<LineUpMatcher> getLineUpMatchers() {
+        return LINE_UP_MATCHERS;
+    }
+
+    /**
+     * Resolves the currency used by Luna Park listings.
      * <p>
-     * MyKombini publishes Myth Cloth prices in Japanese Yen, therefore all listings
+     * Luna Park publishes Myth Cloth prices in Japanese Yen, therefore all listings
      * are assigned the {@code JPY} currency.
      *
      * @param priceText
@@ -143,21 +157,18 @@ public class MyKombiniStoreCrawler extends AbstractPaginatedStoreCrawler {
     }
 
     /**
-     * Resolves MyKombini availability labels into normalized listing statuses.
+     * Resolves availability for Luna Park listing cards.
      * <p>
-     * Listings displaying the "Add to cart" action are considered to be in stock.
-     * All other values are treated as out of stock.
+     * Luna Park currently exposes only products that are available for purchase,
+     * therefore every listing is considered {@link ListingStatus#IN_STOCK}.
      *
      * @param availabilityText
      *            raw availability text extracted from the listing
-     * @return normalized listing status for the given availability label
+     * @return {@link ListingStatus#IN_STOCK} for all crawled listings
      */
     @Override
     public ListingStatus calculateListingStatus(String availabilityText) {
-        if ("Add to cart".equals(availabilityText)) {
-            return ListingStatus.IN_STOCK;
-        }
-        return ListingStatus.OUT_OF_STOCK;
+        return ListingStatus.IN_STOCK;
     }
 
     /**
@@ -170,5 +181,17 @@ public class MyKombiniStoreCrawler extends AbstractPaginatedStoreCrawler {
     @Override
     protected String removeUnnecessaryWords(String nameText) {
         return UNNECESSARY_WORDS_PATTERN.matcher(nameText).replaceAll("").replaceAll("\\s+", " ").trim();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected String filterImageUrl(String imageUrl) {
+        int index = imageUrl.toLowerCase().indexOf(".jpg");
+        if (index >= 0) {
+            return imageUrl.substring(0, index + 4);
+        }
+        return imageUrl;
     }
 }

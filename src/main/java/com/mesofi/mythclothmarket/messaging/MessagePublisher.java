@@ -26,14 +26,15 @@ public class MessagePublisher {
     public void publishCrawlerMessage(StoreListing storeListing) {
         try {
             if (Objects.isNull(storeListing.lineUp())) {
-                log.warn("Skipping message publishing for store listing due to null lineup: {} - [{}], url: {}",
+                log.warn(
+                        "Skipping message publishing for store listing due to lineup could not be detected: {} - [{}], url: {}",
                         storeListing.store(), storeListing.productName(), storeListing.productUrl());
                 return;
             }
 
             rabbitTemplate.convertAndSend(RabbitMQConfig.ExchangeNames.CRAWLER_EXCHANGE, "crawler.job", storeListing);
-            log.info("Message published to crawler exchange: {} - {} [{}]", storeListing.store(), storeListing.lineUp(),
-                    storeListing.productName());
+            log.info("Message published to crawler exchange: {} - {} ${} [{}]", storeListing.store(),
+                    storeListing.lineUp(), storeListing.price(), storeListing.productName());
         } catch (Exception e) {
             log.error("Error publishing crawler message: {}", storeListing, e);
             throw e;

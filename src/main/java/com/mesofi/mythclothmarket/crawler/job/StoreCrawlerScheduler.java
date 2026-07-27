@@ -65,6 +65,9 @@ public class StoreCrawlerScheduler implements SmartInitializingSingleton {
         // configuration
 
         for (StoreCrawler crawler : crawlers) {
+            if (crawler.store() == null) {
+                throw new IllegalArgumentException("No store was configured for crawler: " + crawler);
+            }
 
             CrawlerProperties.Job jobConfig = crawlerProperties.jobs().stream()
                     .filter(job -> job.key() == crawler.store()).findFirst()

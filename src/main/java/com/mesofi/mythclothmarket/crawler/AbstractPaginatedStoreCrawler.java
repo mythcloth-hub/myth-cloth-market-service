@@ -1,5 +1,6 @@
 package com.mesofi.mythclothmarket.crawler;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
@@ -21,6 +22,7 @@ import com.mesofi.mythclothmarket.crawler.mapper.RawStoreListing;
 import com.mesofi.mythclothmarket.crawler.model.ElementSelector;
 import com.mesofi.mythclothmarket.crawler.model.LineUp;
 import com.mesofi.mythclothmarket.crawler.model.LineUpDetection;
+import com.mesofi.mythclothmarket.crawler.model.LineUpMatcher;
 import com.mesofi.mythclothmarket.crawler.model.ListingStatus;
 import com.mesofi.mythclothmarket.crawler.model.StoreListing;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
@@ -35,10 +37,11 @@ import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
  * store-specific selectors, normalizing product names, and converting the
  * extracted information into normalized {@link StoreListing} instances.
  * <p>
- * Concrete subclasses are responsible only for providing store-specific
- * configuration such as the base URL, CSS selectors, lineup resolution,
- * currency resolution, listing status mapping, and any additional product name
- * normalization required by the target store.
+ * Concrete subclasses provide store-specific configuration via template methods
+ * such as {@link #storeBaseUrl()}, {@link #getInitialSearchUrl()},
+ * {@link #selectors()}, {@link #getLineUpMatchers()},
+ * {@link #determineCurrency(String)}, and
+ * {@link #calculateListingStatus(String)}.
  */
 public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
 
@@ -78,13 +81,17 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
     @Override
     public List<StoreListing> crawlListings() {
         List<StoreListing> marketPriceStoreList = new ArrayList<>();
-        final String baseUrl = storeBaseUrl();
+        final URI baseUrl = storeBaseUrl();
         final StorePageSelectors pageSelectors = selectors();
         final StoreName store = store();
         final Function<String, Currency> currencyResolver = this::determineCurrency;
         final Function<String, ListingStatus> listingStatusResolver = this::calculateListingStatus;
 
-        String url = baseUrl + getInitialSearchUrl();
+        URI url = baseUrl.resolve(getInitialSearchUrl());
+        log.info("Retrieving prices using the initial URL: {}", url);
+        if (getMaxPages() == 0) {
+            throw new IllegalArgumentException("Unable to retrieve prices, max pages must be greater than zero");
+        }
 
         int pageCount = 0;
         while (url != null && pageCount < getMaxPages()) {
@@ -105,10 +112,10 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
                 // Normalize extracted fields and adjust image URLs before mapping.
                 rawStoreListing.setNormalizedName(normalizeName(rawStoreListing.getOriginalName()));
                 if (prependedStoreBaseUrlInProductUrl()) {
-                    rawStoreListing.setProductUrl(storeBaseUrl() + rawStoreListing.getProductUrl());
+                    rawStoreListing.setProductUrl(storeBaseUrl().resolve(rawStoreListing.getProductUrl()).toString());
                 }
                 if (prependedStoreBaseUrlInImageUrl()) {
-                    rawStoreListing.setImageUrl(storeBaseUrl() + rawStoreListing.getImageUrl());
+                    rawStoreListing.setImageUrl(storeBaseUrl().resolve(rawStoreListing.getImageUrl()).toString());
                 }
 
                 rawStoreListing.setImageUrl(filterImageUrl(rawStoreListing.getImageUrl()));
@@ -127,7 +134,7 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
                 marketPriceStoreList.add(storeListing);
             });
 
-            url = getNextPageUrl(doc, pageSelectors, baseUrl);
+            url = getNextPageUrl(doc, pageSelectors.nextPage(), baseUrl);
         }
 
         log.info("Finished retrieving store listing info for {}. Total pages: {}, Total items: {}", store, pageCount,
@@ -167,12 +174,18 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
     }
 
     /**
-     * @return absolute base URL for the target store.
+     * Returns the absolute base URL for the target store.
+     *
+     * @return absolute base URL for the target store
      */
-    protected abstract String storeBaseUrl();
+    protected abstract URI storeBaseUrl();
 
     /**
-     * @return initial path (relative or absolute) where crawling starts.
+     * Returns the initial search URL used to start crawling.
+     * <p>
+     * The returned value may be relative to {@link #storeBaseUrl()} or absolute.
+     *
+     * @return initial path (relative or absolute) where crawling starts
      */
     protected abstract String getInitialSearchUrl();
 
@@ -203,7 +216,25 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
      *            the raw product name to analyze
      * @return the result containing the detected lineup and normalized product name
      */
-    protected abstract LineUpDetection determineLineUp(String nameText);
+    protected LineUpDetection determineLineUp(String nameText) {
+        for (LineUpMatcher matcher : getLineUpMatchers()) {
+            if (matcher.matches(nameText)) {
+                return new LineUpDetection(matcher.lineUp(), matcher.extractProductName(nameText));
+            }
+        }
+        return new LineUpDetection(null, nameText);
+    }
+
+    /**
+     * Returns the ordered lineup matchers used by the default lineup detection
+     * algorithm.
+     * <p>
+     * Matchers are evaluated in declaration order; therefore, more specific aliases
+     * should be placed before broader aliases.
+     *
+     * @return ordered lineup matchers for the target store
+     */
+    protected abstract List<LineUpMatcher> getLineUpMatchers();
 
     /**
      * Determines the currency associated with a listing.
@@ -321,21 +352,25 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
      *
      * @param doc
      *            the parsed HTML document of the current page
-     * @param pageSelectors
-     *            the selectors configured for the current store
+     * @param nextPageSelector
+     *            the CSS selector for the next page link
      * @param baseUrl
      *            the store's base URL used to resolve relative links
      * @return the next page URL, or {@code null} if no additional page exists
      */
-    private String getNextPageUrl(Document doc, StorePageSelectors pageSelectors, String baseUrl) {
-        Element nextPageLink = doc.selectFirst(pageSelectors.nextPage());
+    private URI getNextPageUrl(Document doc, String nextPageSelector, URI baseUrl) {
+        if (nextPageSelector == null) {
+            return null;
+        }
+
+        Element nextPageLink = doc.selectFirst(nextPageSelector);
         if (nextPageLink != null) {
             String href = nextPageLink.attr("href");
             if (!href.isEmpty()) {
                 if (href.startsWith("http")) {
-                    return href;
+                    return URI.create(href);
                 } else if (href.startsWith("/")) {
-                    return baseUrl + href;
+                    return baseUrl.resolve(href);
                 }
             }
         }
