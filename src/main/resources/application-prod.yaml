@@ -8,27 +8,32 @@ myth-cloth-market-service:
     jobs:
       - key: "NIN_NIN_GAME"
         name: "Nin Nin Game Crawler"
-        cron: ${NIN_NIN_GAME_CRON:0 0 9 * * ?}
+        cron: ${NIN_NIN_GAME_CRON:0 0 7 * * ?}
         enabled: true
 
       - key: "MANDARAKE"
         name: "Mandarake Crawler"
-        cron: ${MANDARAKE_CRON:0 0 10 * * ?}
+        cron: ${MANDARAKE_CRON:0 0 8 * * ?}
         enabled: true
 
       - key: "LUNA_PARK"
         name: "Luna Park Crawler"
-        cron: ${LUNA_PARK_CRON:0 0 11 * * ?}
+        cron: ${LUNA_PARK_CRON:0 0 9 * * ?}
         enabled: true
 
       - key: "MY_KOMBINI"
         name: "My Kombini Crawler"
-        cron: ${MY_KOMBINI_CRON:0 0 12 * * ?}
+        cron: ${MY_KOMBINI_CRON:0 0 10 * * ?}
         enabled: true
 
       - key: "MYTH_SUPPLIES"
         name: "Myth Supplies Crawler"
-        cron: ${MYTH_SUPPLIES_CRON:0 0 13 * * ?}
+        cron: ${MYTH_SUPPLIES_CRON:0 0 11 * * ?}
+        enabled: true
+
+      - key: "LOGAN_STORE"
+        name: "Logan Store Crawler"
+        cron: ${LOGAN_STORE:0 0 12 * * ?}
         enabled: true
 
 spring:

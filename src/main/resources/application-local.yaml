@@ -8,27 +8,32 @@ myth-cloth-market-service:
     jobs:
       - key: "NIN_NIN_GAME"
         name: "Nin Nin Game Crawler"
-        cron: "0 * * * * ?" # Every 2 hours
+        cron: "0 0 7 * * ?" # Every day at 7:00
         enabled: false
 
       - key: "MANDARAKE"
         name: "Mandarake Crawler"
-        cron: "0 0 9 * * ?"   # Every day at 9 AM
+        cron: "0 0 8 * * ?" # Every day at 8:00
         enabled: false
 
       - key: "LUNA_PARK"
         name: "Luna Park Crawler"
-        cron: "0 0 12 * * ?"   # Every day at noon
+        cron: "0 0 9 * * ?" # Every day at 9:00
         enabled: false
 
       - key: "MY_KOMBINI"
         name: "My Kombini Crawler"
-        cron: "0 0 11 * * ?"   # Every day at 11 AM
+        cron: "0 0 10 * * ?" # Every day at 10:00
         enabled: false
 
       - key: "MYTH_SUPPLIES"
         name: "Myth Supplies Crawler"
-        cron: "* * * * * ?"   # Every day at 12 AM
+        cron: "0 0 11 * * ?" # Every day at 11:00
+        enabled: false
+
+      - key: "LOGAN_STORE"
+        name: "Logan Store Crawler"
+        cron: "0 0 12 * * ?" # Every day at 12:00
         enabled: false
 
 spring:

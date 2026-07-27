@@ -35,7 +35,12 @@ public enum StoreName {
     /**
      * Myth Supplies online store.
      */
-    MYTH_SUPPLIES("https://mythsupplies.com");
+    MYTH_SUPPLIES("https://mythsupplies.com"),
+
+    /**
+     * Logan Store online store.
+     */
+    LOGAN_STORE("https://loganstore.com.mx");
 
     /**
      * Base website URI of the store.

@@ -134,7 +134,7 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
                 marketPriceStoreList.add(storeListing);
             });
 
-            url = getNextPageUrl(doc, pageSelectors, baseUrl);
+            url = getNextPageUrl(doc, pageSelectors.nextPage(), baseUrl);
         }
 
         log.info("Finished retrieving store listing info for {}. Total pages: {}, Total items: {}", store, pageCount,
@@ -352,14 +352,18 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
      *
      * @param doc
      *            the parsed HTML document of the current page
-     * @param pageSelectors
-     *            the selectors configured for the current store
+     * @param nextPageSelector
+     *            the CSS selector for the next page link
      * @param baseUrl
      *            the store's base URL used to resolve relative links
      * @return the next page URL, or {@code null} if no additional page exists
      */
-    private URI getNextPageUrl(Document doc, StorePageSelectors pageSelectors, URI baseUrl) {
-        Element nextPageLink = doc.selectFirst(pageSelectors.nextPage());
+    private URI getNextPageUrl(Document doc, String nextPageSelector, URI baseUrl) {
+        if (nextPageSelector == null) {
+            return null;
+        }
+
+        Element nextPageLink = doc.selectFirst(nextPageSelector);
         if (nextPageLink != null) {
             String href = nextPageLink.attr("href");
             if (!href.isEmpty()) {
