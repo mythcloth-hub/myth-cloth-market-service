@@ -392,8 +392,16 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
      *            the consumer that receives the extracted value
      */
     private void extractAndSet(Element element, ElementSelector selector, Consumer<String> consumer) {
-        Optional.ofNullable(element.selectFirst(selector.selector()))
-                .ifPresent(e -> consumer.accept(findElementValue(selector, e)));
+        boolean multiple = selector.multiple();
+        if (multiple) {
+            Elements elements = element.select(selector.selector());
+            String valueElement = elements.stream().map(theElement -> findElementValue(selector, theElement))
+                    .map(String::trim).filter(value -> !value.isEmpty()).findFirst().orElse(null);
+            consumer.accept(valueElement);
+        } else {
+            Optional.ofNullable(element.selectFirst(selector.selector()))
+                    .ifPresent(e -> consumer.accept(findElementValue(selector, e)));
+        }
     }
 
     /**

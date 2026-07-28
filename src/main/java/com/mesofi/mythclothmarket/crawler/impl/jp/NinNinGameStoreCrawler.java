@@ -120,7 +120,8 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
         return new StorePageSelectors(".general_block_card.ajax_block_product.item", "#pagination_next_bottom a",
                 new ElementSelector("a.product-name", "title"),
                 new ElementSelector("div.product_image > a > img", "src"),
-                new ElementSelector("div.product_image > a", "href"), new ElementSelector("span.price"),
+                new ElementSelector("div.product_image > a", "href"),
+                new ElementSelector(true, "div.price_container span.stroke, div.price_container span.price"),
                 new ElementSelector("span.pill.orange"),
                 new ElementSelector("div.actions > button, div.actions > span"));
     }
