@@ -46,10 +46,18 @@ public class MarketPricingService {
         // retrieves the prices ...
         List<StoreListing> listingsToPublish = storeCrawler.crawlListings().stream().toList();
 
+        int totalMessages = listingsToPublish.size();
+        int publishedMessages = 0;
+        int skippedMessages = 0;
         int failedMessages = 0;
+
         for (StoreListing listing : listingsToPublish) {
             try {
-                messagePublisher.publishCrawlerMessage(listing);
+                if (messagePublisher.publishCrawlerMessage(listing)) {
+                    publishedMessages++;
+                } else {
+                    skippedMessages++;
+                }
             } catch (RuntimeException ex) {
                 failedMessages++;
                 log.error("Error publishing listing for store: {} with product URL: {}", listing.store(),
@@ -57,7 +65,7 @@ public class MarketPricingService {
             }
         }
 
-        int publishedMessages = listingsToPublish.size() - failedMessages;
-        log.info("{} figurines were published. {} failed to publish.", publishedMessages, failedMessages);
+        log.info("{} total. [{}] figurines were published. {} failed to publish. {} were skipped.", totalMessages,
+                publishedMessages, failedMessages, skippedMessages);
     }
 }
