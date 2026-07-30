@@ -238,7 +238,7 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
         return switch (availabilityText.toLowerCase()) {
             case "add to cart" -> ListingStatus.IN_STOCK;
             case "soon available" -> ListingStatus.OUT_OF_STOCK;
-            default -> ListingStatus.UNKNOWN;
+            default -> ListingStatus.DISCONTINUED;
         };
     }
 
