@@ -104,7 +104,7 @@ public class MandarakeStoreCrawler extends AbstractPaginatedStoreCrawler {
         return new StorePageSelectors("div.block[data-adult=\"0\"]", "div.next a",
                 new ElementSelector("div.title > p > a"), new ElementSelector("div.thum > a > img", "src"),
                 new ElementSelector("div.thum > a", "href"), new ElementSelector("div.price > p"), null,
-                new ElementSelector("div.addcart.addcart-text-en > a"));
+                new ElementSelector("div.addcart.addcart-text-en > a"), null);
     }
 
     /**

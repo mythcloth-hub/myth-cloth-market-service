@@ -20,23 +20,28 @@ public class MessagePublisher {
     /**
      * Publishes a crawler message object to the crawler queue.
      *
-     * @param storeListing
+     * @param listing
      *            the crawler message to publish
+     * @return true if the message was published successfully, false if the
+     *         listing's lineup is null and the message was skipped
+     * @throws RuntimeException
+     *             if an error occurs during message publishing
      */
-    public void publishCrawlerMessage(StoreListing storeListing) {
+    public boolean publishCrawlerMessage(final StoreListing listing) {
         try {
-            if (Objects.isNull(storeListing.lineUp())) {
+            if (Objects.isNull(listing.lineUp())) {
                 log.warn(
-                        "Skipping message publishing for store listing due to lineup could not be detected: {} - [{}], url: {}",
-                        storeListing.store(), storeListing.productName(), storeListing.productUrl());
-                return;
+                        "Skipping message publishing for store listing due to lineup could not be detected: {} - [{}] => {}, url: {}",
+                        listing.store(), listing.productName(), listing.originalProductName(), listing.productUrl());
+                return false;
             }
 
-            rabbitTemplate.convertAndSend(RabbitMQConfig.ExchangeNames.CRAWLER_EXCHANGE, "crawler.job", storeListing);
-            log.info("Message published to crawler exchange: {} - {} ${} [{}]", storeListing.store(),
-                    storeListing.lineUp(), storeListing.price(), storeListing.productName());
+            rabbitTemplate.convertAndSend(RabbitMQConfig.ExchangeNames.CRAWLER_EXCHANGE, "crawler.job", listing);
+            log.info("Message published to crawler exchange: {} - {} ${} [{}] => {}", listing.store(), listing.lineUp(),
+                    listing.price(), listing.productName(), listing.originalProductName());
+            return true;
         } catch (Exception e) {
-            log.error("Error publishing crawler message: {}", storeListing, e);
+            log.error("Error publishing crawler message: {}", listing, e);
             throw e;
         }
     }

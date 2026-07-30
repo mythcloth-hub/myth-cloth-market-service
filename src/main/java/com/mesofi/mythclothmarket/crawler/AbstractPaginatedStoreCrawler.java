@@ -86,6 +86,7 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
         final StoreName store = store();
         final Function<String, Currency> currencyResolver = this::determineCurrency;
         final Function<String, ListingStatus> listingStatusResolver = this::calculateListingStatus;
+        final Function<Element, Boolean> preorderResolver = this::calculatePreorder;
 
         URI url = baseUrl.resolve(getInitialSearchUrl());
         log.info("Retrieving prices using the initial URL: {}", url);
@@ -129,7 +130,7 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
                 rawStoreListing.setNormalizedName(lineUp.normalizedName());
 
                 StoreListing storeListing = crawlerMapper.toStoreListing(rawStoreListing, store, lineUp.lineUp(),
-                        currencyResolver, listingStatusResolver);
+                        currencyResolver, listingStatusResolver, preorderResolver);
 
                 marketPriceStoreList.add(storeListing);
             });
@@ -169,6 +170,8 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
                 .ifPresent(selector -> extractAndSet(element, selector, priceStore::setDiscountText));
         Optional.ofNullable(selectors.availability())
                 .ifPresent(selector -> extractAndSet(element, selector, priceStore::setAvailabilityText));
+        Optional.ofNullable(selectors.preorder())
+                .ifPresent(selector -> priceStore.setPreorderElement(element.selectFirst(selector)));
 
         return priceStore;
     }
@@ -258,6 +261,20 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
      *         determined
      */
     protected abstract ListingStatus calculateListingStatus(String availabilityText);
+
+    /**
+     * Determines whether a listing is available for preorder. This method should be
+     * overridden by subclasses that need to detect preorder status based on
+     * specific HTML elements or attributes.
+     *
+     * @param preorderElement
+     *            the raw preorder element extracted from the listing
+     * @return {@code true} if the listing is available for preorder, {@code false}
+     *         otherwise
+     */
+    protected Boolean calculatePreorder(Element preorderElement) {
+        return preorderElement != null;
+    }
 
     /**
      * Normalizes a product name before it is mapped to a domain object.
@@ -392,8 +409,16 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
      *            the consumer that receives the extracted value
      */
     private void extractAndSet(Element element, ElementSelector selector, Consumer<String> consumer) {
-        Optional.ofNullable(element.selectFirst(selector.selector()))
-                .ifPresent(e -> consumer.accept(findElementValue(selector, e)));
+        boolean multiple = selector.multiple();
+        if (multiple) {
+            Elements elements = element.select(selector.selector());
+            String valueElement = elements.stream().map(theElement -> findElementValue(selector, theElement))
+                    .map(String::trim).filter(value -> !value.isEmpty()).findFirst().orElse(null);
+            consumer.accept(valueElement);
+        } else {
+            Optional.ofNullable(element.selectFirst(selector.selector()))
+                    .ifPresent(e -> consumer.accept(findElementValue(selector, e)));
+        }
     }
 
     /**

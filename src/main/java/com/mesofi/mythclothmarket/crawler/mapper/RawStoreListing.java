@@ -1,5 +1,7 @@
 package com.mesofi.mythclothmarket.crawler.mapper;
 
+import org.jsoup.nodes.Element;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,4 +23,5 @@ public class RawStoreListing {
     private String priceText;
     private String discountText;
     private String availabilityText;
+    private Element preorderElement;
 }

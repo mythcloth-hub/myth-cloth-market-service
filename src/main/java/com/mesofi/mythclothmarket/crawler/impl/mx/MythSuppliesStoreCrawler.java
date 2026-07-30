@@ -99,7 +99,7 @@ public class MythSuppliesStoreCrawler extends AbstractPaginatedStoreCrawler {
         return new StorePageSelectors("div.col-md-3", "a[rel=next]", new ElementSelector("div.info > h3"),
                 new ElementSelector("div.block.producto img", "src"),
                 new ElementSelector("div.block.producto > a", "href"), new ElementSelector("div.info > div.precio"),
-                null, new ElementSelector("div.info button.btn.btn-success"));
+                null, new ElementSelector("div.info button.btn.btn-success"), null);
     }
 
     /**

@@ -7,6 +7,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jsoup.nodes.Element;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -63,10 +64,12 @@ public interface CrawlerMapper {
     @Mapping(target = "discountedPrice", source = "raw", qualifiedByName = "calculateDiscountedPrice")
     @Mapping(target = "currency", expression = "java(calculateCurrency.apply(raw.getPriceText()))")
     @Mapping(target = "status", expression = "java(calculateListingStatus.apply(raw.getAvailabilityText()))")
+    @Mapping(target = "preorder", expression = "java(calculatePreorder.apply(raw.getPreorderElement()))")
     @Mapping(target = "checkedAt", expression = "java(Instant.now())")
     StoreListing toStoreListing(RawStoreListing raw, @Context StoreName storeName, @Context LineUp lineUp,
             @Context Function<String, Currency> calculateCurrency,
-            @Context Function<String, ListingStatus> calculateListingStatus);
+            @Context Function<String, ListingStatus> calculateListingStatus,
+            @Context Function<Element, Boolean> calculatePreorder);
 
     /**
      * Extracts and parses the numeric value from a raw price string.
