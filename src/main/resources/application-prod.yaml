@@ -33,7 +33,12 @@ myth-cloth-market-service:
 
       - key: "LOGAN_STORE"
         name: "Logan Store Crawler"
-        cron: ${LOGAN_STORE:0 0 12 * * ?}
+        cron: ${LOGAN_STORE_CRON:0 0 12 * * ?}
+        enabled: true
+
+      - key: "MYTH_FACTORY"
+        name: "Myth Factory Crawler"
+        cron: ${MYTH_FACTORY_CRON:0 0 13 * * ?}
         enabled: true
 
 spring:

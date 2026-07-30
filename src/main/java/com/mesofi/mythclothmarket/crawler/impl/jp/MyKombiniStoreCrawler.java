@@ -104,7 +104,7 @@ public class MyKombiniStoreCrawler extends AbstractPaginatedStoreCrawler {
                 new ElementSelector("a.product_img_link", "title"),
                 new ElementSelector("a.product_img_link > img", "src"),
                 new ElementSelector("a.product_img_link", "href"), new ElementSelector("span.price"), null,
-                new ElementSelector("a.exclusive.ajax_add_to_cart_button"));
+                new ElementSelector("a.exclusive.ajax_add_to_cart_button"), null);
     }
 
     /**

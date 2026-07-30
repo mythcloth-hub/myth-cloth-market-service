@@ -123,7 +123,7 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
                 new ElementSelector("div.product_image > a", "href"),
                 new ElementSelector(true, "div.price_container span.stroke, div.price_container span.price"),
                 new ElementSelector("span.pill.orange"),
-                new ElementSelector("div.actions > button, div.actions > span"));
+                new ElementSelector("div.actions > button, div.actions > span"), "div.box.preorder_date_box");
     }
 
     /**
@@ -241,4 +241,5 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
             default -> ListingStatus.UNKNOWN;
         };
     }
+
 }

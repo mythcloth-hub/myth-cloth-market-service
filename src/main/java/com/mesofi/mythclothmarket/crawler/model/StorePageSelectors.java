@@ -32,5 +32,5 @@ import jakarta.annotation.Nonnull;
 public record StorePageSelectors(@Nonnull String listingContainer, String nextPage,
         @Nonnull ElementSelector productName, @Nonnull ElementSelector productImage,
         @Nonnull ElementSelector productUrl, @Nonnull ElementSelector productPrice, ElementSelector discount,
-        ElementSelector availability) {
+        ElementSelector availability, String preorder) {
 }

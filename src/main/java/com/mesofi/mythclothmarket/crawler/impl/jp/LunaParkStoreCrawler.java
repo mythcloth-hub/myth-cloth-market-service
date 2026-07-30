@@ -106,7 +106,7 @@ public class LunaParkStoreCrawler extends AbstractPaginatedStoreCrawler {
                         "li[data-hook=\"product-list-grid-item\"] [data-hook=\"ProductMediaDataHook.Images\"] img:first-of-type",
                         "src"),
                 new ElementSelector("a[data-hook=\"product-item-container\"]", "href"),
-                new ElementSelector("span[data-hook=\"product-item-price-to-pay\"]"), null, null);
+                new ElementSelector("span[data-hook=\"product-item-price-to-pay\"]"), null, null, null);
     }
 
     /**

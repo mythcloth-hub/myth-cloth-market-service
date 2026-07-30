@@ -40,7 +40,12 @@ public enum StoreName {
     /**
      * Logan Store online store.
      */
-    LOGAN_STORE("https://loganstore.com.mx");
+    LOGAN_STORE("https://loganstore.com.mx"),
+
+    /**
+     * Myth Factory online store.
+     */
+    MYTH_FACTORY("https://www.mythfactoryshop.com");
 
     /**
      * Base website URI of the store.

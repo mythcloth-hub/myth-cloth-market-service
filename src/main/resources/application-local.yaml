@@ -36,6 +36,11 @@ myth-cloth-market-service:
         cron: "0 0 12 * * ?" # Every day at 12:00
         enabled: false
 
+      - key: "MYTH_FACTORY"
+        name: "Myth Factory Crawler"
+        cron: "0 0 13 * * ?" # Every day at 13:00
+        enabled: false
+
 spring:
   rabbitmq:
     host: localhost

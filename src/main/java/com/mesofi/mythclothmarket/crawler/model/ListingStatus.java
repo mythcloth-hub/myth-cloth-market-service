@@ -4,5 +4,5 @@ package com.mesofi.mythclothmarket.crawler.model;
  * Availability status values for a crawled listing.
  */
 public enum ListingStatus {
-    IN_STOCK, OUT_OF_STOCK, PREORDER, SOLD_OUT, UNKNOWN
+    PREORDER, IN_STOCK, OUT_OF_STOCK, UNKNOWN
 }

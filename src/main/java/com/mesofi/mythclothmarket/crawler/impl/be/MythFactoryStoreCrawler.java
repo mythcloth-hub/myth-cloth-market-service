@@ -1,4 +1,4 @@
-package com.mesofi.mythclothmarket.crawler.impl.mx;
+package com.mesofi.mythclothmarket.crawler.impl.be;
 
 import static com.mesofi.mythclothmarket.utils.RegexUtils.compileAliases;
 
@@ -21,18 +21,18 @@ import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
 
 /**
  * {@link com.mesofi.mythclothmarket.crawler.StoreCrawler} implementation for
- * the Logan Store online store.
+ * the Myth Factory online store.
  * <p>
- * This crawler traverses Logan Store's paginated Myth Cloth search results,
+ * This crawler traverses Myth Factory's paginated Saint Seiya search results,
  * extracts raw listing data, and delegates normalization to the shared crawler
  * infrastructure.
  * <p>
  * Besides store-specific lineup alias detection, this implementation applies
- * fixed resolution rules for currency and availability based on the storefront
- * conventions used by Logan Store.
+ * fixed resolution rules for currency and availability labels based on the
+ * storefront conventions used by Myth Factory.
  */
 @Component
-public class LoganStoreCrawler extends AbstractPaginatedStoreCrawler {
+public class MythFactoryStoreCrawler extends AbstractPaginatedStoreCrawler {
 
     /**
      * Ordered lineup aliases matched against the beginning of the product name.
@@ -41,12 +41,12 @@ public class LoganStoreCrawler extends AbstractPaginatedStoreCrawler {
      * appear before broader ones.
      */
     private static final List<LineUpMatcher> LINE_UP_MATCHERS = List.of(
-            new LineUpMatcher(LineUp.MYTH_CLOTH_EX,
-                    compileAliases("saint seiya myth cloth ex", "saint cloth myth ex", "myth cloth ex", "myth ex")),
-            new LineUpMatcher(LineUp.MYTH_CLOTH, compileAliases("saint seiya saint cloth myth", "saint cloth myth")));
+            new LineUpMatcher(LineUp.MYTH_CLOTH_EX, compileAliases("saint cloth myth ex", "myth cloth ex figure")),
+            new LineUpMatcher(LineUp.MYTH_CLOTH, compileAliases("saint cloth myth", "myth cloth figure")),
+            new LineUpMatcher(LineUp.FIGUARTS_ZERO, compileAliases("figuarts zero touche metallique")));
 
     /**
-     * Creates a crawler for the Logan Store storefront.
+     * Creates a crawler for the Myth Factory storefront.
      *
      * @param pageFetcher
      *            the component responsible for retrieving the HTML pages
@@ -54,7 +54,8 @@ public class LoganStoreCrawler extends AbstractPaginatedStoreCrawler {
      *            the mapper that converts raw scraped values into normalized
      *            {@code StoreListing} instances
      */
-    protected LoganStoreCrawler(@Qualifier("jsoupHtmlFetcher") PageFetcher pageFetcher, CrawlerMapper mapper) {
+    protected MythFactoryStoreCrawler(@Qualifier("playwrightHtmlFetcher") PageFetcher pageFetcher,
+            CrawlerMapper mapper) {
         super(pageFetcher, mapper);
     }
 
@@ -63,7 +64,7 @@ public class LoganStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     public StoreName store() {
-        return StoreName.LOGAN_STORE;
+        return StoreName.MYTH_FACTORY;
     }
 
     /**
@@ -71,7 +72,7 @@ public class LoganStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     protected URI storeBaseUrl() {
-        return StoreName.LOGAN_STORE.website();
+        return StoreName.MYTH_FACTORY.website();
     }
 
     /**
@@ -79,7 +80,7 @@ public class LoganStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     protected String getInitialSearchUrl() {
-        return "?s=myth+cloth&post_type=product&type_aws=true";
+        return "/en/search?controller=search&s=saint+seiya";
     }
 
     /**
@@ -87,7 +88,7 @@ public class LoganStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     protected int getMaxPages() {
-        return 3;
+        return 4;
     }
 
     /**
@@ -95,10 +96,14 @@ public class LoganStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     @Override
     protected StorePageSelectors selectors() {
-        return new StorePageSelectors("li.product.type-product", null, new ElementSelector("div.flex-fill > a"),
-                new ElementSelector("div.tp-image-wrapper > img", "src"),
-                new ElementSelector("div.flex-fill > a", "href"), new ElementSelector(".woocommerce-Price-amount bdi"),
-                new ElementSelector("div.info-sale"), null, null);
+        return new StorePageSelectors("article.product-miniature", "a.next.js-search-link",
+                new ElementSelector("div.h3.product-title > a"),
+                new ElementSelector("div.thumbnail-container img", "src"),
+                new ElementSelector("div.thumbnail-container a", "href"),
+                new ElementSelector(true,
+                        "div.product-price-and-shipping > span.regular-price, div.product-price-and-shipping > span.price"),
+                new ElementSelector("div.product-price-and-shipping > span.discount-amount.discount-product"),
+                new ElementSelector("ul.product-flags > li.flag-oos"), "img.plabel_img");
     }
 
     /**
@@ -110,33 +115,35 @@ public class LoganStoreCrawler extends AbstractPaginatedStoreCrawler {
     }
 
     /**
-     * Resolves the currency used by Logan Store listings.
+     * Resolves the currency used by Myth Factory listings.
      * <p>
-     * Logan Store publishes prices in Mexican Pesos, therefore all listings are
-     * assigned the {@code MXN} currency.
+     * Myth Factory publishes prices in Euros, therefore all listings are assigned
+     * the {@code EUR} currency.
      *
      * @param priceText
      *            raw price text extracted from the listing
-     * @return {@code MXN} for all listings
+     * @return {@code EUR} for all listings
      */
     @Override
     protected Currency determineCurrency(String priceText) {
-        return Currency.getInstance("MXN");
+        return Currency.getInstance("EUR");
     }
 
     /**
-     * Resolves availability for Logan Store listing cards.
+     * Resolves Myth Factory availability labels into normalized listing statuses.
      * <p>
-     * Logan Store currently exposes only products that are available for purchase,
-     * therefore every listing is considered {@link ListingStatus#IN_STOCK}.
+     * Listings marked as "Out of stock" are considered out of stock. Any other
+     * value is treated as in stock.
      *
      * @param availabilityText
      *            raw availability text extracted from the listing
-     * @return {@link ListingStatus#IN_STOCK} for all crawled listings
+     * @return normalized listing status for the given availability label
      */
     @Override
     protected ListingStatus calculateListingStatus(String availabilityText) {
+        if ("Out of stock".equalsIgnoreCase(availabilityText)) {
+            return ListingStatus.OUT_OF_STOCK;
+        }
         return ListingStatus.IN_STOCK;
     }
-
 }
