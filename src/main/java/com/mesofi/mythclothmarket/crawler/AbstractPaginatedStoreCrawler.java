@@ -20,7 +20,6 @@ import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
 import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper;
 import com.mesofi.mythclothmarket.crawler.mapper.RawStoreListing;
 import com.mesofi.mythclothmarket.crawler.model.ElementSelector;
-import com.mesofi.mythclothmarket.crawler.model.LineUp;
 import com.mesofi.mythclothmarket.crawler.model.LineUpDetection;
 import com.mesofi.mythclothmarket.crawler.model.LineUpMatcher;
 import com.mesofi.mythclothmarket.crawler.model.ListingStatus;

@@ -4,15 +4,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Associates a {@link LineUp} with the compiled pattern used to recognize it in
- * a product name.
+ * Associates a {@link LineUpType} with the compiled pattern used to recognize
+ * it in a product name.
  *
  * @param lineUp
  *            the lineup represented by this matcher
  * @param pattern
  *            the compiled pattern used to identify the lineup
  */
-public record LineUpMatcher(LineUp lineUp, Pattern pattern) {
+public record LineUpMatcher(LineUpType lineUp, Pattern pattern) {
 
     /**
      * Determines whether the specified text matches this lineup.

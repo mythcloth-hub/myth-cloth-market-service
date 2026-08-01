@@ -10,11 +10,11 @@ package com.mesofi.mythclothmarket.crawler.model;
  * subsequent matching or processing.
  * <p>
  * For example, given the raw name:
- * 
+ *
  * <pre>
  * Saint Seiya Myth Cloth EX - Cygnus Hyoga (Final Bronze Cloth) ~Original Color Edition~
  * </pre>
- * 
+ *
  * the resulting detection would contain:
  * <ul>
  * <li>{@code lineUp = LineUp.MYTH_CLOTH_EX}</li>
@@ -26,5 +26,5 @@ package com.mesofi.mythclothmarket.crawler.model;
  * @param normalizedName
  *            the product name with the lineup prefix removed
  */
-public record LineUpDetection(LineUp lineUp, String normalizedName) {
+public record LineUpDetection(LineUpType lineUp, String normalizedName) {
 }

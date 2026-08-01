@@ -15,9 +15,9 @@ import com.mesofi.mythclothmarket.crawler.AbstractPaginatedStoreCrawler;
 import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
 import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper;
 import com.mesofi.mythclothmarket.crawler.model.ElementSelector;
-import com.mesofi.mythclothmarket.crawler.model.LineUp;
 import com.mesofi.mythclothmarket.crawler.model.LineUpDetection;
 import com.mesofi.mythclothmarket.crawler.model.LineUpMatcher;
+import com.mesofi.mythclothmarket.crawler.model.LineUpType;
 import com.mesofi.mythclothmarket.crawler.model.ListingStatus;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
 import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
@@ -49,13 +49,13 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
      * before more general ones to ensure the correct lineup is detected.
      */
     private static final List<LineUpMatcher> LINE_UP_MATCHERS = List.of(
-            new LineUpMatcher(LineUp.MYTH_CLOTH_EX, compileAliases("myth cloth ex", "saint cloth myth ex")),
-            new LineUpMatcher(LineUp.MYTH_CLOTH,
+            new LineUpMatcher(LineUpType.MYTH_CLOTH_EX, compileAliases("myth cloth ex", "saint cloth myth ex")),
+            new LineUpMatcher(LineUpType.MYTH_CLOTH,
                     compileAliases("myth cloth", "saint cloth myth", "saint seiya cloth myth")),
-            new LineUpMatcher(LineUp.APPENDIX, compileAliases("appendix")),
-            new LineUpMatcher(LineUp.SAINT_CLOTH_LEGEND, compileAliases("myth cloth legend")),
-            new LineUpMatcher(LineUp.CROWN, compileAliases("crown cloth")),
-            new LineUpMatcher(LineUp.DD_PANORAMATION, compileAliases("d.d.panoramation")));
+            new LineUpMatcher(LineUpType.APPENDIX, compileAliases("appendix")),
+            new LineUpMatcher(LineUpType.SAINT_CLOTH_LEGEND, compileAliases("myth cloth legend")),
+            new LineUpMatcher(LineUpType.SAINT_CLOTH_CROWN, compileAliases("crown cloth")),
+            new LineUpMatcher(LineUpType.DD_PANORAMATION, compileAliases("d.d.panoramation")));
 
     /**
      * Characters that separate the lineup portion from the character name in a
