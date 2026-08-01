@@ -14,9 +14,9 @@ import com.mesofi.mythclothmarket.crawler.AbstractPaginatedStoreCrawler;
 import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
 import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper;
 import com.mesofi.mythclothmarket.crawler.model.ElementSelector;
-import com.mesofi.mythclothmarket.crawler.model.LineUp;
 import com.mesofi.mythclothmarket.crawler.model.LineUpDetection;
 import com.mesofi.mythclothmarket.crawler.model.LineUpMatcher;
+import com.mesofi.mythclothmarket.crawler.model.LineUpType;
 import com.mesofi.mythclothmarket.crawler.model.ListingStatus;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
 import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
@@ -46,8 +46,8 @@ public class LunaParkStoreCrawler extends AbstractPaginatedStoreCrawler {
      * appear before broader ones.
      */
     private static final List<LineUpMatcher> LINE_UP_MATCHERS = List.of(
-            new LineUpMatcher(LineUp.MYTH_CLOTH_EX, compileAliases("myth cloth ex", "cloth myth ex")),
-            new LineUpMatcher(LineUp.MYTH_CLOTH, compileAliases("myth cloth", "cloth myth")));
+            new LineUpMatcher(LineUpType.MYTH_CLOTH_EX, compileAliases("myth cloth ex", "cloth myth ex")),
+            new LineUpMatcher(LineUpType.MYTH_CLOTH, compileAliases("myth cloth", "cloth myth")));
 
     /**
      * Creates a crawler for the Luna Park storefront.

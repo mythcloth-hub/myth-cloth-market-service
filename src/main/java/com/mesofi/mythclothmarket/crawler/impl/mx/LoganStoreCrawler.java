@@ -13,8 +13,8 @@ import com.mesofi.mythclothmarket.crawler.AbstractPaginatedStoreCrawler;
 import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
 import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper;
 import com.mesofi.mythclothmarket.crawler.model.ElementSelector;
-import com.mesofi.mythclothmarket.crawler.model.LineUp;
 import com.mesofi.mythclothmarket.crawler.model.LineUpMatcher;
+import com.mesofi.mythclothmarket.crawler.model.LineUpType;
 import com.mesofi.mythclothmarket.crawler.model.ListingStatus;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
 import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
@@ -41,9 +41,10 @@ public class LoganStoreCrawler extends AbstractPaginatedStoreCrawler {
      * appear before broader ones.
      */
     private static final List<LineUpMatcher> LINE_UP_MATCHERS = List.of(
-            new LineUpMatcher(LineUp.MYTH_CLOTH_EX,
+            new LineUpMatcher(LineUpType.MYTH_CLOTH_EX,
                     compileAliases("saint seiya myth cloth ex", "saint cloth myth ex", "myth cloth ex", "myth ex")),
-            new LineUpMatcher(LineUp.MYTH_CLOTH, compileAliases("saint seiya saint cloth myth", "saint cloth myth")));
+            new LineUpMatcher(LineUpType.MYTH_CLOTH,
+                    compileAliases("saint seiya saint cloth myth", "saint cloth myth")));
 
     /**
      * Creates a crawler for the Logan Store storefront.

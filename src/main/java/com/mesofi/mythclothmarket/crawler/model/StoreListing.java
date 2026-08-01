@@ -38,7 +38,7 @@ import java.util.Currency;
  * @param checkedAt
  *            the timestamp when the listing was crawled.
  */
-public record StoreListing(StoreName store, LineUp lineUp, String originalProductName, String productName,
+public record StoreListing(StoreName store, LineUpType lineUp, String originalProductName, String productName,
         String productImageUrl, String productUrl, BigDecimal price, BigDecimal discount, BigDecimal discountedPrice,
         Currency currency, ListingStatus status, boolean preorder, Instant checkedAt) {
 }

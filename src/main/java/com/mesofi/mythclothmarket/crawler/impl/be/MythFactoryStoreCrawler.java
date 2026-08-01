@@ -13,8 +13,8 @@ import com.mesofi.mythclothmarket.crawler.AbstractPaginatedStoreCrawler;
 import com.mesofi.mythclothmarket.crawler.fetcher.PageFetcher;
 import com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper;
 import com.mesofi.mythclothmarket.crawler.model.ElementSelector;
-import com.mesofi.mythclothmarket.crawler.model.LineUp;
 import com.mesofi.mythclothmarket.crawler.model.LineUpMatcher;
+import com.mesofi.mythclothmarket.crawler.model.LineUpType;
 import com.mesofi.mythclothmarket.crawler.model.ListingStatus;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
 import com.mesofi.mythclothmarket.crawler.model.StorePageSelectors;
@@ -41,9 +41,9 @@ public class MythFactoryStoreCrawler extends AbstractPaginatedStoreCrawler {
      * appear before broader ones.
      */
     private static final List<LineUpMatcher> LINE_UP_MATCHERS = List.of(
-            new LineUpMatcher(LineUp.MYTH_CLOTH_EX, compileAliases("saint cloth myth ex", "myth cloth ex figure")),
-            new LineUpMatcher(LineUp.MYTH_CLOTH, compileAliases("saint cloth myth", "myth cloth figure")),
-            new LineUpMatcher(LineUp.FIGUARTS_ZERO, compileAliases("figuarts zero touche metallique")));
+            new LineUpMatcher(LineUpType.MYTH_CLOTH_EX, compileAliases("saint cloth myth ex", "myth cloth ex figure")),
+            new LineUpMatcher(LineUpType.MYTH_CLOTH, compileAliases("saint cloth myth", "myth cloth figure")),
+            new LineUpMatcher(LineUpType.FIGUARTS_ZERO, compileAliases("figuarts zero touche metallique")));
 
     /**
      * Creates a crawler for the Myth Factory storefront.

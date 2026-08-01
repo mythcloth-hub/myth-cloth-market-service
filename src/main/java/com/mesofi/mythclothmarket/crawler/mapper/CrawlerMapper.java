@@ -13,7 +13,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
-import com.mesofi.mythclothmarket.crawler.model.LineUp;
+import com.mesofi.mythclothmarket.crawler.model.LineUpType;
 import com.mesofi.mythclothmarket.crawler.model.ListingStatus;
 import com.mesofi.mythclothmarket.crawler.model.StoreListing;
 import com.mesofi.mythclothmarket.crawler.model.StoreName;
@@ -66,7 +66,7 @@ public interface CrawlerMapper {
     @Mapping(target = "status", expression = "java(calculateListingStatus.apply(raw.getAvailabilityText()))")
     @Mapping(target = "preorder", expression = "java(calculatePreorder.apply(raw.getPreorderElement()))")
     @Mapping(target = "checkedAt", expression = "java(Instant.now())")
-    StoreListing toStoreListing(RawStoreListing raw, @Context StoreName storeName, @Context LineUp lineUp,
+    StoreListing toStoreListing(RawStoreListing raw, @Context StoreName storeName, @Context LineUpType lineUp,
             @Context Function<String, Currency> calculateCurrency,
             @Context Function<String, ListingStatus> calculateListingStatus,
             @Context Function<Element, Boolean> calculatePreorder);
