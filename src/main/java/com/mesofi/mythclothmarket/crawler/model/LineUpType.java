@@ -38,6 +38,9 @@ public enum LineUpType {
     /** Standard Figuarts lineup. */
     FIGUARTS,
 
+    /** Tamashii Nations Box lineup. */
+    TAMASHII_NATIONS_BOX,
+
     /** Saint Cloth Action lineup. */
     SAINT_CLOTH_ACTION,
 
@@ -45,5 +48,8 @@ public enum LineUpType {
     SAINT_CLOTH_REBIRTH,
 
     /** Saint Cloth Series lineup. */
-    SAINT_CLOTH_SERIES
+    SAINT_CLOTH_SERIES,
+
+    /** Metal Build EX Project lineup. */
+    METALBUILD_EX_PROJECT
 }
