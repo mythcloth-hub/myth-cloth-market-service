@@ -1,17 +1,14 @@
 services:
   rabbitmq:
     image: rabbitmq:4.0-management
-    container_name: rabbitmq
     restart: unless-stopped
-
-    ports:
-      - "5672:5672"    # AMQP
-      - "15672:15672"  # Management UI
-
+    container_name: rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: mythcloth
       RABBITMQ_DEFAULT_PASS: mythcloth
-
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
