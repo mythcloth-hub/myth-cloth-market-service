@@ -42,7 +42,12 @@ myth-cloth-market-service:
         enabled: true
 
 spring:
+
   rabbitmq:
+    port: ${RABBITMQ_PORT}
     host: ${RABBITMQ_HOST}
     username: ${RABBITMQ_USERNAME}
     password: ${RABBITMQ_PASSWORD}
+    virtual-host: ${RABBITMQ_VIRTUAL_HOST}
+    ssl:
+      enabled: true
