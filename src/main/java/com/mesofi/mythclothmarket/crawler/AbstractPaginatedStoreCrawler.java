@@ -210,9 +210,9 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
      * Extracts lineup information from the specified product name.
      * <p>
      * Implementations should apply any store-specific naming conventions to
-     * determine the corresponding {@link LineUp} and return a
-     * {@link LineUpDetection} containing both the detected lineup and the
-     * normalized product name with any lineup prefix removed.
+     * determine the corresponding LineUp and return a {@link LineUpDetection}
+     * containing both the detected lineup and the normalized product name with any
+     * lineup prefix removed.
      *
      * @param nameText
      *            the raw product name to analyze

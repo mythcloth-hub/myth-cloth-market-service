@@ -54,6 +54,24 @@ repositories {
     mavenCentral()
 }
 
+sourceSets {
+    integrationTest {
+        java {
+            srcDir 'src/integrationTest/java'
+        }
+        resources {
+            srcDir 'src/integrationTest/resources'
+        }
+        compileClasspath = sourceSets.main.output + configurations.integrationTestCompileClasspath
+        runtimeClasspath = output + compileClasspath + configurations.integrationTestRuntimeClasspath
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
 dependencies {
     // --- Spring Boot ---
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
@@ -62,22 +80,39 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 
+    // --- Lombok ---
     compileOnly 'org.projectlombok:lombok'
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.projectlombok:lombok'
-    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-    testImplementation 'org.springframework.boot:spring-boot-starter-quartz-test'
-    testImplementation 'org.springframework.boot:spring-boot-starter-restclient-test'
-    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-    testCompileOnly 'org.projectlombok:lombok'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    testAnnotationProcessor 'org.projectlombok:lombok'
-    implementation 'com.microsoft.playwright:playwright:1.54.0'
-    implementation 'org.jsoup:jsoup:1.18.1'
+
+    // --- Runtime ---
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
     // --- Mapping ---
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+
+    // --- Test ---
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-quartz-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-restclient-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+
+    // Parsing
+    implementation 'com.microsoft.playwright:playwright:1.54.0'
+    implementation 'org.jsoup:jsoup:1.18.1'
+
+
+    // --- Integration Test ---
+    integrationTestImplementation 'org.springframework.boot:spring-boot-starter-test'
+    integrationTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
+    integrationTestImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    integrationTestImplementation 'org.wiremock:wiremock-standalone:3.3.1'
+    integrationTestRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // --- Annotation Processors ---
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 }
 
 jacoco {
@@ -96,14 +131,83 @@ pitest {
     mutators = ['DEFAULTS']
 
     excludedClasses = [
-            '*Config',
-            '*Properties'
+            'com.mesofi.mythclothmarket.*Config',
+            'com.mesofi.mythclothmarket.*Properties',
+            'com.mesofi.mythclothmarket.crawler.fetcher.*',
+            'com.mesofi.mythclothmarket.crawler.AbstractPaginatedStoreCrawler',
+            'com.mesofi.mythclothmarket.crawler.job.*',
+            'com.mesofi.mythclothmarket.messaging.*',
+            'com.mesofi.mythclothmarket.crawler.impl.*',
+            'com.mesofi.mythclothmarket.pricing.*',
+            'com.mesofi.mythclothmarket.utils.RegexUtils',
+            '*.dto.*',
+            '*.entity.*',
+            '*.model.*',
+            'com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapper',
+            'com.mesofi.mythclothmarket.crawler.mapper.CrawlerMapperImpl',
     ]
 
     mutationThreshold = 100
 }
 
+tasks.register('integrationTest', Test) {
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    shouldRunAfter tasks.named('test')
+    useJUnitPlatform()
+}
+
+tasks.named('processIntegrationTestResources') {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
 
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy tasks.named('jacocoTestReport')
+}
+
+tasks.named('jacocoTestReport', JacocoReport) {
+    dependsOn tasks.named('test')
+
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+
+    classDirectories.setFrom(
+            files(classDirectories.files.collect {
+                fileTree(dir: it, exclude: [
+                        '**/config/**',
+                        '**/dto/**',
+                        '**/entity/**'
+                ])
+            })
+    )
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('integrationTest')
+    dependsOn tasks.named('jacocoTestReport')
+    dependsOn tasks.named('pitest')
+}
+
+tasks.named('compileJava') {
+    dependsOn 'spotlessApply'
+}
+
+tasks.named('bootRun') {
+    dependsOn 'spotlessApply'
+}
+
+def generatedOpenApiYaml = layout.buildDirectory.file('generated/openapi/swagger.yaml')
+
+tasks.register('generateOpenApiYaml', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    group = 'documentation'
+    description = 'Generates the OpenAPI YAML export from the current controllers.'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.mesofi.mythclothapi.security.OpenApiYamlGenerator'
+    args generatedOpenApiYaml.get().asFile.absolutePath
+    outputs.file generatedOpenApiYaml
 }
