@@ -1,6 +1,8 @@
 package com.mesofi.mythclothmarket.crawler.fetcher;
 
 import java.net.URI;
+import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Component;
@@ -21,6 +23,14 @@ import lombok.extern.slf4j.Slf4j;
 public class PlaywrightHtmlFetcher implements PageFetcher {
     private static final String MANDARAKE_ORDER_HOST = "order.mandarake.co.jp";
     private static final String MANDARAKE_WARMUP_URL = "https://www.mandarake.co.jp/index2.html";
+    private static final String USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+            + "(KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36";
+
+    private final PlaywrightProperties playwrightProperties;
+
+    public PlaywrightHtmlFetcher(PlaywrightProperties playwrightProperties) {
+        this.playwrightProperties = playwrightProperties;
+    }
 
     /**
      * Fetches fully rendered HTML by navigating the page in a headless browser.
@@ -31,12 +41,20 @@ public class PlaywrightHtmlFetcher implements PageFetcher {
      */
     @Override
     public String fetch(final URI url) {
+        BrowserType.LaunchOptions launchOptions = new BrowserType.LaunchOptions()
+                .setHeadless(playwrightProperties.headless()).setArgs(defaultedArgs(playwrightProperties.args()));
+
+        if (hasText(playwrightProperties.channel())) {
+            launchOptions.setChannel(playwrightProperties.channel());
+        }
+
+        if (hasText(playwrightProperties.executablePath())) {
+            launchOptions.setExecutablePath(Path.of(playwrightProperties.executablePath()));
+        }
 
         try (Playwright playwright = Playwright.create();
-                Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true))) {
-            BrowserContext context = browser.newContext(new Browser.NewContextOptions()
-                    .setUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
-                            + "(KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36")
+                Browser browser = playwright.chromium().launch(launchOptions)) {
+            BrowserContext context = browser.newContext(new Browser.NewContextOptions().setUserAgent(USER_AGENT)
                     .setViewportSize(1920, 1080).setLocale("en-US").setTimezoneId("America/Mexico_City"));
 
             context.setExtraHTTPHeaders(Map.of("Accept-Language", "en-US,en;q=0.9", "Upgrade-Insecure-Requests", "1"));
@@ -61,5 +79,13 @@ public class PlaywrightHtmlFetcher implements PageFetcher {
 
     private boolean requiresMandarakeWarmup(URI url) {
         return MANDARAKE_ORDER_HOST.equalsIgnoreCase(url.getHost());
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+
+    private List<String> defaultedArgs(List<String> args) {
+        return args == null ? List.of() : args;
     }
 }

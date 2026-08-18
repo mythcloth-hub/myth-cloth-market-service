@@ -1,10 +1,16 @@
 logging:
   level:
     root: INFO
-    org.quartz: DEBUG
+    org.quartz: INFO
 
 myth-cloth-market-service:
   crawler:
+    playwright:
+      channel: ${PLAYWRIGHT_CHANNEL:chrome}
+      executable-path: ${PLAYWRIGHT_EXECUTABLE_PATH:/usr/bin/google-chrome}
+      args:
+        - "--no-sandbox"
+        - "--disable-dev-shm-usage"
     jobs:
       - key: "NIN_NIN_GAME"
         name: "Nin Nin Game Crawler"
