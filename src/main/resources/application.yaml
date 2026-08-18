@@ -10,6 +10,9 @@ management:
       show-details: always
 
 myth-cloth-market-service:
+  crawler:
+    playwright:
+      headless: true
 
 server:
   servlet:

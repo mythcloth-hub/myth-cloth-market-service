@@ -3,6 +3,8 @@ package com.mesofi.mythclothmarket.crawler.job;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import com.mesofi.mythclothmarket.crawler.fetcher.PlaywrightProperties;
+
 /**
  * Registers crawler-related Spring configuration.
  * <p>
@@ -11,6 +13,6 @@ import org.springframework.context.annotation.Configuration;
  * through the application's configuration files.
  */
 @Configuration
-@EnableConfigurationProperties(CrawlerProperties.class)
+@EnableConfigurationProperties({CrawlerProperties.class, PlaywrightProperties.class})
 public class CrawlerConfig {
 }

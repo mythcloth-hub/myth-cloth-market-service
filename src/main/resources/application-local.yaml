@@ -1,7 +1,7 @@
 logging:
   level:
     root: INFO
-    org.quartz: DEBUG
+    org.quartz: INFO
 
 myth-cloth-market-service:
   crawler:
