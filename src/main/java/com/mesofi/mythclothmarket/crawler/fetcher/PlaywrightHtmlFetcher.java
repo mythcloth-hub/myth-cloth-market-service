@@ -4,7 +4,9 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
+import org.jsoup.Connection;
 import org.springframework.stereotype.Component;
 
 import com.microsoft.playwright.Browser;
@@ -16,7 +18,14 @@ import com.microsoft.playwright.Playwright;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link PageFetcher} backed by a headless Playwright browser.
+ * Playwright-backed implementation of {@link PageFetcher} for storefront pages
+ * that require a real browser environment to render correctly.
+ * <p>
+ * This fetcher starts a headless browser context with browser-like headers,
+ * viewport settings, locale, and timezone, then navigates to the requested URL.
+ * It is primarily used for pages that perform client-side rendering or require
+ * browser state to avoid anti-bot protections. For Mandarake order pages, it
+ * also performs a warmup navigation before the actual target page is loaded.
  */
 @Slf4j
 @Component
@@ -33,14 +42,23 @@ public class PlaywrightHtmlFetcher implements PageFetcher {
     }
 
     /**
-     * Fetches fully rendered HTML by navigating the page in a headless browser.
+     * Fetches the fully rendered HTML for the requested page by opening it in a
+     * headless browser context configured to behave like a normal browser session.
+     * <p>
+     * The request hook parameter is accepted for interface compatibility with the
+     * fetcher contract, but this implementation does not use it because the browser
+     * navigation flow is managed directly by Playwright. For Mandarake order pages,
+     * a pre-flight warmup navigation is executed before the final page load to
+     * reduce bot-detection and redirect issues.
      *
+     * @param request
+     *            unused compatibility argument for the generic fetch contract
      * @param url
-     *            absolute page URL.
-     * @return rendered page HTML.
+     *            absolute page URL to load in the browser
+     * @return rendered page HTML content, or {@code null} when the load fails
      */
     @Override
-    public String fetch(final URI url) {
+    public String fetch(Function<Connection, Connection.Response> request, final URI url) {
         BrowserType.LaunchOptions launchOptions = new BrowserType.LaunchOptions()
                 .setHeadless(playwrightProperties.headless()).setArgs(defaultedArgs(playwrightProperties.args()));
 

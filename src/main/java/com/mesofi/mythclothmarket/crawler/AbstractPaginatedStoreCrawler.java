@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -67,6 +68,24 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
     }
 
     /**
+     * Returns an optional request hook for stores that need to perform an
+     * additional HTTP request before loading the page content.
+     * <p>
+     * Some storefronts require a pre-flight operation such as a currency switch,
+     * cookie warm-up, or locale selection before the actual product HTML is
+     * returned. Concrete crawlers may override this method to provide the required
+     * request logic. When no special behavior is needed, the default implementation
+     * returns {@code null}, which means the crawler fetches the page without any
+     * extra request.
+     *
+     * @return a custom request function to execute before the main page fetch, or
+     *         {@code null} when no pre-request is required
+     */
+    protected Function<Connection, Connection.Response> request() {
+        return null;
+    }
+
+    /**
      * Crawls all configured listing pages for the target store.
      * <p>
      * Starting from the initial search URL, this method retrieves each page,
@@ -97,7 +116,7 @@ public abstract class AbstractPaginatedStoreCrawler implements StoreCrawler {
         while (url != null && pageCount < getMaxPages()) {
             pageCount++;
 
-            String html = pageFetcher.fetch(url);
+            String html = pageFetcher.fetch(request(), url);
             if (html == null) {
                 break;
             }
