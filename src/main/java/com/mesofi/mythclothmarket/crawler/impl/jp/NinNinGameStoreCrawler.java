@@ -2,12 +2,16 @@ package com.mesofi.mythclothmarket.crawler.impl.jp;
 
 import static com.mesofi.mythclothmarket.utils.RegexUtils.compileAliases;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.Currency;
 import java.util.List;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jsoup.Connection;
+import org.jsoup.Connection.Response;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
@@ -78,6 +82,29 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
      */
     public NinNinGameStoreCrawler(@Qualifier("jsoupHtmlFetcher") PageFetcher pageFetcher, CrawlerMapper mapper) {
         super(pageFetcher, mapper);
+    }
+
+    /**
+     * Prepares the Nin-Nin-Game request flow so the store renders prices in USD.
+     * <p>
+     * The fetcher performs a warmup request first, then posts the storefront
+     * currency selector for the USD option and reuses the resulting session cookies
+     * for the final page load. This keeps the selected currency aligned with the
+     * HTML returned by the site.
+     *
+     * @return a function that posts the USD selection to Nin-Nin-Game and returns
+     *         the server response
+     */
+    @Override
+    public Function<Connection, Response> request() {
+        return (conn) -> {
+            try {
+                return conn.method(Connection.Method.POST).data("id_currency", "2").data("SubmitCurrency", "1")
+                        .execute();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 
     /**
@@ -183,9 +210,11 @@ public class NinNinGameStoreCrawler extends AbstractPaginatedStoreCrawler {
      * Determines the currency of a listing by inspecting the currency prefix
      * contained in the raw price text.
      * <p>
-     * Nin-Nin-Game prefixes prices with abbreviations such as {@code MEX},
-     * {@code USD}, {@code EUR}, or {@code JPY}. These prefixes are mapped to their
-     * corresponding ISO 4217 currencies.
+     * Nin-Nin-Game may render listing prices using different locale-specific
+     * prefixes depending on the active currency session. This implementation
+     * recognizes the known prefixes used by the storefront and maps them to the
+     * corresponding ISO 4217 currencies, including {@code USD} for the forced USD
+     * request flow used by this crawler.
      *
      * @param priceText
      *            the raw price text extracted from the listing

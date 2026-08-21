@@ -70,8 +70,8 @@ class AbstractPaginatedStoreCrawlerTest {
                 </body></html>
                 """;
 
-        when(fetcher.fetch(URI.create("https://store.test/search"))).thenReturn(firstPage);
-        when(fetcher.fetch(URI.create("https://store.test/search?page=2"))).thenReturn(secondPage);
+        when(fetcher.fetch(any(), eq(URI.create("https://store.test/search")))).thenReturn(firstPage);
+        when(fetcher.fetch(any(), eq(URI.create("https://store.test/search?page=2")))).thenReturn(secondPage);
         when(mapper.toStoreListing(any(), eq(StoreName.LUNA_PARK), any(), any(), any(), any()))
                 .thenReturn(new StoreListing(StoreName.LUNA_PARK, LineUpType.MYTH_CLOTH_EX, "o", "n", "i", "u",
                         BigDecimal.ONE, null, BigDecimal.ONE, Currency.getInstance("JPY"), ListingStatus.IN_STOCK,
