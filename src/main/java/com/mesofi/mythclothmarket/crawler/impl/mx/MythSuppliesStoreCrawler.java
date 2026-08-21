@@ -55,7 +55,8 @@ public class MythSuppliesStoreCrawler extends AbstractPaginatedStoreCrawler {
      *            the mapper that converts raw scraped values into normalized
      *            {@code StoreListing} instances
      */
-    protected MythSuppliesStoreCrawler(@Qualifier("jsoupHtmlFetcher") PageFetcher pageFetcher, CrawlerMapper mapper) {
+    protected MythSuppliesStoreCrawler(@Qualifier("playwrightHtmlFetcher") PageFetcher pageFetcher,
+            CrawlerMapper mapper) {
         super(pageFetcher, mapper);
     }
 
