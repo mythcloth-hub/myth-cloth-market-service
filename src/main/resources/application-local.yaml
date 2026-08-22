@@ -41,6 +41,11 @@ myth-cloth-market-service:
         cron: "0 0 13 * * ?" # Every day at 13:00
         enabled: false
 
+      - key: "JUNGLE"
+        name: "Jungle Store Crawler"
+        cron: "0 0 14 * * ?" # Every day at 14:00
+        enabled: false
+
 spring:
 
   rabbitmq:
