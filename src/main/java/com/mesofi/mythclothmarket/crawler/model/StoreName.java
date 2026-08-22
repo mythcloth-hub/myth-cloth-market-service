@@ -45,7 +45,12 @@ public enum StoreName {
     /**
      * Myth Factory online store.
      */
-    MYTH_FACTORY("https://www.mythfactoryshop.com");
+    MYTH_FACTORY("https://www.mythfactoryshop.com"),
+
+    /**
+     * Jungle online store.
+     */
+    JUNGLE("https://jungle-scs-ensale.com");
 
     /**
      * Base website URI of the store.
